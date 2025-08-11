@@ -12,6 +12,12 @@ import CategoryPage from "./components/CategoryPage";
 import Contact from "./Pages/Contact";
 import Login from "../src/Pages/Login";
 import SignUp from "../src/Pages/SignUp";
+import Cart from "../src/Pages/Cart";
+import Wishlist from "../src/Pages/Wishlist";
+import AdminDashboard from "../src/Pages/AdminDashboard";
+import Search from "../src/Pages/Search";
+import Profile from "../src/Pages/Profile";
+import Checkout from "../src/Pages/Checkout";
 
 // Subcategory pages
 // Men
@@ -53,6 +59,7 @@ const AppRoutes = () => {
         <Route path="/shop" element={<Shop />} />
         <Route path="/about" element={<About />} />
         <Route path="/collections" element={<Collections />} />
+        <Route path="/search" element={<Search />} />
         {/* Shared dynamic category route */}
         <Route path="/category/:categoryName" element={<CategoryPage />} />
         
@@ -91,6 +98,11 @@ const AppRoutes = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/checkout" element={<Checkout />} />
         {/* Catch-all route for 404 */}
         {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>
