@@ -13,22 +13,17 @@ const categoryData = [
   {
     name: "Men",
     path: "/category/men",
-    subcategories: ["T-Shirts", "Shirts", "Jeans", "Shoes"],
+    subcategories: ["T-Shirts", "Shirts", "Jackets", "Jeans", "Shorts", "Sweaters"],
   },
   {
     name: "Women",
     path: "/category/women",
-    subcategories: ["Dresses", "Tops", "Heels", "Handbags"],
+    subcategories: ["Dresses", "Tops", "Skirts", "Jeans", "Jackets", "Sweaters"],
   },
   {
     name: "Kids",
     path: "/category/kids",
-    subcategories: ["T-Shirts", "Toys", "Shoes"],
-  },
-  {
-    name: "Home",
-    path: "/category/home",
-    subcategories: ["Decor", "Bedding", "Furniture"],
+    subcategories: ["T-Shirts", "Dresses", "Pants", "Jackets", "Sweaters", "Shorts"],
   },
 ];
 
@@ -44,10 +39,6 @@ const categories = [
   "Men",
   "Women",
   "Kids",
-  "Home",
-  "Beauty",
-  "GenZ",
-  "Studio",
 ];
 
 const Navbar = () => {
@@ -88,7 +79,9 @@ const Navbar = () => {
                             {cat.subcategories.map((sub, idx) => (
                               <Link
                                 key={idx}
-                                to={`${cat.path}/${sub.toLowerCase().replace(/\s/g, "-")}`}
+                                to={`${cat.path}/${sub
+                                  .toLowerCase()
+                                  .replace(/[^a-z0-9]/g, "")}`}
                                 className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-black"
                               >
                                 {sub}
@@ -154,7 +147,7 @@ const Navbar = () => {
       </div>
 
       {/* Category Bar */}
-      {/* <div className="hidden md:block bg-white border-t border-gray-100">
+      <div className="hidden md:block bg-white border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center space-x-6 h-12">
             {categories.map((category) => (
@@ -164,14 +157,11 @@ const Navbar = () => {
                 className="text-sm font-medium text-gray-700 hover:text-black transition-all"
               >
                 {category}
-                {category === "Studio" && (
-                  <span className="text-xs text-black ml-1 font-semibold">NEW</span>
-                )}
               </Link>
             ))}
           </div>
         </div>
-      </div> */}
+      </div>
 
       {/* Mobile Menu */}
       <div
