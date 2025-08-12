@@ -2,7 +2,7 @@ import React from "react";
 import { ShoppingBag, X, ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { removeFromCart, updateQuantity } from '../store/slices/cartSlice';
+import { removeFromCart, updateQuantity } from '../features/cart/cartSlice';
 import { useToast } from '../contexts/ToastContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';

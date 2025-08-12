@@ -18,6 +18,7 @@ import AdminDashboard from "../src/Pages/AdminDashboard";
 import Search from "../src/Pages/Search";
 import Profile from "../src/Pages/Profile";
 import Checkout from "../src/Pages/Checkout";
+import ProductDetail from "../src/Pages/ProductDetail";
 
 // Subcategory pages
 // Men
@@ -103,6 +104,7 @@ const AppRoutes = () => {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
         {/* Catch-all route for 404 */}
         {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>

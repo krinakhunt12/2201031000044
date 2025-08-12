@@ -1,8 +1,8 @@
 import React from "react";
-import SubcategoryPage from "../../../components/SubcategoryPage";
+import SubcategoryPageNew from "../../../components/SubcategoryPageNew";
 
 const MenTshirts = () => (
-  <SubcategoryPage
+  <SubcategoryPageNew
     categoryLabel="Men"
     subcategoryLabel="T-Shirts"
     query="men tshirt fashion"

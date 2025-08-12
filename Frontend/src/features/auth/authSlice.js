@@ -100,6 +100,12 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.isAdmin = action.payload.role === 'admin';
     },
+    login: (state, action) => {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      state.isAdmin = action.payload.isAdmin || false;
+      state.token = 'demo-token';
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -154,6 +160,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, setUser } = authSlice.actions;
+export const { logout, clearError, setUser, login } = authSlice.actions;
 
 export default authSlice.reducer;

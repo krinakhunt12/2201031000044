@@ -11,8 +11,12 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { logout } from '../store/slices/authSlice';
+import { logout } from '../features/auth/authSlice';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../hooks/useAuth';
+import { useSearch } from '../hooks/useSearch';
+import AuthModal from './auth/AuthModal';
+import SearchSuggestions from './search/SearchSuggestions';
 
 const categoryData = [
   {
@@ -49,14 +53,36 @@ const categories = [
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, user, isAdmin } = useAppSelector(state => state.auth);
   const { totalQuantity: cartCount } = useAppSelector(state => state.cart);
   const { items: wishlistItems } = useAppSelector(state => state.wishlist);
   const { showSuccess } = useToast();
+  
+  // Custom hooks
+  const { 
+    isAuthenticated, 
+    user, 
+    isAdmin, 
+    showAuthModal, 
+    authMode, 
+    openLoginModal, 
+    openSignUpModal, 
+    closeAuthModal 
+  } = useAuth();
+  
+  const {
+    searchQuery,
+    suggestions,
+    isLoading: searchLoading,
+    showSuggestions,
+    handleSearchChange,
+    handleSuggestionSelect,
+    handleSearchSubmit,
+    hideSuggestions,
+    setShowSuggestions,
+  } = useSearch();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -67,9 +93,9 @@ const Navbar = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      handleSearchSubmit(searchQuery);
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpen(false);
-      setSearchQuery("");
     }
   };
 
@@ -196,18 +222,18 @@ const Navbar = () => {
               </div>
             ) : (
               <>
-                <Link
-                  to="/login"
+                <button
+                  onClick={openLoginModal}
                   className="px-5 py-1.5 border border-gray-300 text-sm rounded-full font-medium text-gray-800 hover:text-black transition-all"
                 >
                   Login
-                </Link>
-                <Link
-                  to="/signup"
+                </button>
+                <button
+                  onClick={openSignUpModal}
                   className="px-5 py-1.5 bg-black text-white text-sm rounded-full font-medium hover:opacity-90 transition-all"
                 >
                   Sign Up
-                </Link>
+                </button>
               </>
             )}
           </div>
@@ -230,7 +256,9 @@ const Navbar = () => {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={hideSuggestions}
                 placeholder="Search for products..."
                 className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
                 autoFocus
@@ -242,27 +270,20 @@ const Navbar = () => {
               >
                 Search
               </button>
+              
+              {/* Search Suggestions */}
+              <SearchSuggestions
+                suggestions={suggestions}
+                isVisible={showSuggestions}
+                onSelectSuggestion={handleSuggestionSelect}
+                searchQuery={searchQuery}
+                isLoading={searchLoading}
+              />
             </form>
           </div>
         </div>
       )}
 
-      {/* Category Bar */}
-      <div className="hidden md:block bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center space-x-6 h-12">
-            {categories.map((category) => (
-              <Link
-                key={category}
-                to={`/category/${category.toLowerCase()}`}
-                className="text-sm font-medium text-gray-700 hover:text-black transition-all"
-              >
-                {category}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* Mobile Menu */}
       <div
@@ -288,11 +309,22 @@ const Navbar = () => {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={hideSuggestions}
                 placeholder="Search products..."
                 className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              
+              {/* Mobile Search Suggestions */}
+              <SearchSuggestions
+                suggestions={suggestions}
+                isVisible={showSuggestions}
+                onSelectSuggestion={handleSuggestionSelect}
+                searchQuery={searchQuery}
+                isLoading={searchLoading}
+              />
             </form>
           </div>
 
@@ -328,24 +360,36 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="space-y-2 pt-2 border-t border-gray-200">
-              <Link
-                to="/login"
-                onClick={() => setIsMenuOpen(false)}
+              <button
+                onClick={() => {
+                  openLoginModal();
+                  setIsMenuOpen(false);
+                }}
                 className="block w-full text-center px-6 py-2 border border-gray-300 text-gray-800 rounded-full font-medium hover:text-black"
               >
                 Login
-              </Link>
-              <Link
-                to="/signup"
-                onClick={() => setIsMenuOpen(false)}
+              </button>
+              <button
+                onClick={() => {
+                  openSignUpModal();
+                  setIsMenuOpen(false);
+                }}
                 className="block w-full text-center px-6 py-2 bg-black text-white rounded-full font-medium hover:opacity-90"
               >
                 Sign Up
-              </Link>
+              </button>
             </div>
           )}
         </div>
       </div>
+      
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={closeAuthModal}
+        initialMode={authMode}
+        className="z-50 my-12"
+      />
     </header>
   );
 };

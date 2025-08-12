@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { StarIcon, HeartIcon } from "@heroicons/react/24/solid";
 import { HeartIcon as HeartOutline } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { addToCart } from '../store/slices/cartSlice';
-import { addToWishlist, removeFromWishlist } from '../store/slices/wishlistSlice';
+import { addToCart } from '../features/cart/cartSlice';
+import { addToWishlist, removeFromWishlist } from '../features/wishlist/wishlistSlice';
 import { useToast } from '../contexts/ToastContext';
 
 const ProductCard = ({ product, showColors = true, showRating = true }) => {
@@ -35,7 +36,9 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     dispatch(addToCart({
       ...product,
       quantity: 1,
@@ -54,11 +57,13 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
       className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 group"
     >
       <div className="relative">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        <Link to={`/product/${product.id}`}>
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </Link>
         
         {/* Sale Badge */}
         {product.onSale && (
@@ -93,9 +98,11 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
       
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold text-gray-800 line-clamp-1">
-            {product.name}
-          </h3>
+          <Link to={`/product/${product.id}`} className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-800 line-clamp-1 hover:text-black transition-colors">
+              {product.name}
+            </h3>
+          </Link>
           {showRating && product.rating && (
             <div className="flex items-center bg-gray-100 px-2 py-1 rounded-full">
               <StarIcon className="w-4 h-4 text-yellow-400 mr-1" />

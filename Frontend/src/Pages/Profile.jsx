@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Edit, Save, X, LogOut } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { logout } from '../store/slices/authSlice';
+import { logout } from '../features/auth/authSlice';
 import { useToast } from '../contexts/ToastContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';

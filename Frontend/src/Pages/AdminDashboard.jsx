@@ -13,7 +13,7 @@ import {
   Eye
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { loginAdmin, logout } from '../store/slices/authSlice';
+import { loginAdmin, logout } from '../features/auth/authSlice';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
