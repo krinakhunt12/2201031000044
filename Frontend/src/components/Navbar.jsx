@@ -8,15 +8,19 @@ import {
   ChevronRight,
   User,
   LogOut,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { logout } from '../features/auth/authSlice';
+import { logout, login } from '../features/auth/authSlice';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../hooks/useAuth';
 import { useSearch } from '../hooks/useSearch';
-import AuthModal from './auth/AuthModal';
+import Modal from './ui/Modal';
 import SearchSuggestions from './search/SearchSuggestions';
+import SignUp from "../Pages/SignUp";
+import Login from "../Pages/Login";
 
 const categoryData = [
   {
@@ -54,6 +58,19 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   
+  // Auth form states (mode managed by useAuth)
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loginFormData, setLoginFormData] = useState({ email: '', password: '' });
+  const [signupFormData, setSignupFormData] = useState({ 
+    name: '', 
+    email: '', 
+    password: '', 
+    confirmPassword: '' 
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { totalQuantity: cartCount } = useAppSelector(state => state.cart);
@@ -64,9 +81,9 @@ const Navbar = () => {
   const { 
     isAuthenticated, 
     user, 
-    isAdmin, 
+    isAdmin: userIsAdmin, 
     showAuthModal, 
-    authMode, 
+    authMode: hookAuthMode, 
     openLoginModal, 
     openSignUpModal, 
     closeAuthModal 
@@ -89,6 +106,93 @@ const Navbar = () => {
     showSuccess('Logged out successfully');
     navigate('/');
   };
+
+  // Auth form handlers
+  const handleLoginInputChange = (e) => {
+    setLoginFormData({
+      ...loginFormData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSignupInputChange = (e) => {
+    setSignupFormData({
+      ...signupFormData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // For demo purposes, create a mock user
+      const mockUser = {
+        id: 1,
+        name: isAdmin ? 'Admin User' : 'John Doe',
+        email: loginFormData.email,
+        isAdmin: isAdmin
+      };
+      
+      dispatch(login(mockUser));
+      showSuccess(`Welcome back, ${mockUser.name}!`);
+      closeAuthModal();
+    } catch (error) {
+      showError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (signupFormData.password !== signupFormData.confirmPassword) {
+      showError('Passwords do not match');
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // For demo purposes, create a mock user
+      const mockUser = {
+        id: 1,
+        name: signupFormData.name,
+        email: signupFormData.email,
+        isAdmin: false
+      };
+      
+      dispatch(login(mockUser));
+      showSuccess(`Welcome to Stylon, ${mockUser.name}!`);
+      closeAuthModal();
+    } catch (error) {
+      showError('Sign up failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSwitchMode = () => {
+    if (hookAuthMode === 'login') {
+      openSignUpModal();
+    } else {
+      openLoginModal();
+    }
+  };
+
+  const handleSwitchToAdmin = () => {
+    setIsAdmin(!isAdmin);
+  };
+
+  // Outer modal helpers removed; individual forms handle their own modal UI
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -198,7 +302,7 @@ const Navbar = () => {
                   <span className="text-sm font-medium text-gray-800">{user?.name}</span>
                 </button>
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white shadow-lg border border-gray-100 rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-40">
-                  {isAdmin && (
+                  {userIsAdmin && (
                     <Link
                       to="/admin"
                       className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
@@ -332,7 +436,7 @@ const Navbar = () => {
           {isAuthenticated ? (
             <div className="space-y-2 pt-2 border-t border-gray-200">
               <div className="text-sm text-gray-600 px-2">Welcome, {user?.name}</div>
-              {isAdmin && (
+              {userIsAdmin && (
                 <Link
                   to="/admin"
                   onClick={() => setIsMenuOpen(false)}
@@ -383,13 +487,36 @@ const Navbar = () => {
         </div>
       </div>
       
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={closeAuthModal}
-        initialMode={authMode}
-        className="z-50 my-12"
-      />
+      {/* Auth Modal (render exactly one, based on mode from useAuth) */}
+      {hookAuthMode === 'login' ? (
+        <Login
+          isOpen={showAuthModal}
+          onClose={closeAuthModal}
+          isAdmin={isAdmin}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          loginFormData={loginFormData}
+          handleLoginInputChange={handleLoginInputChange}
+          handleLoginSubmit={handleLoginSubmit}
+          isLoading={isLoading}
+          handleSwitchToAdmin={handleSwitchToAdmin}
+          handleSwitchMode={handleSwitchMode}
+        />
+      ) : (
+        <SignUp
+          isOpen={showAuthModal}
+          onClose={closeAuthModal}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          showConfirmPassword={showConfirmPassword}
+          setShowConfirmPassword={setShowConfirmPassword}
+          signupFormData={signupFormData}
+          handleSignupInputChange={handleSignupInputChange}
+          handleSignupSubmit={handleSignupSubmit}
+          isLoading={isLoading}
+          handleSwitchMode={handleSwitchMode}
+        />
+      )}
     </header>
   );
 };
