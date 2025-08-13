@@ -1,34 +1,64 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 
-const SignUp = ({
-  isOpen,
-  onClose,
-  showPassword,
-  setShowPassword,
-  showConfirmPassword,
-  setShowConfirmPassword,
-  signupFormData,
-  handleSignupInputChange,
-  handleSignupSubmit,
-  isLoading,
-  handleSwitchMode,
-}) => {
+const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
+  const [signupFormData, setSignupFormData] = useState({
+    name: '',
+    emailOrPhone: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSignupInputChange = (e) => {
+    const { name, value } = e.target;
+    setSignupFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+
+    if (signupFormData.password !== signupFormData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signupFormData),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Signup successful!');
+        onClose();
+      } else {
+        alert(data.message || 'Signup failed');
+      }
+    } catch (err) {
+      console.error('Signup error:', err);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Create account"
-      size="md"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Create account" size="md">
       <div className="w-full max-w-md mx-auto">
-        {/* Header */}
         <div className="text-center mb-4">
           <p className="text-gray-600">Join Stylon and start shopping</p>
         </div>
 
-        {/* Google Button */}
         <button className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2 px-4 font-medium hover:bg-gray-50 transition-colors mb-6">
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -38,20 +68,16 @@ const SignUp = ({
           Continue with Google
         </button>
 
-        {/* Divider */}
         <div className="flex items-center mb-4">
           <div className="flex-grow h-px bg-gray-200"></div>
           <span className="mx-4 text-sm text-gray-500">or</span>
           <div className="flex-grow h-px bg-gray-200"></div>
         </div>
 
-        {/* Signup Form */}
         <form onSubmit={handleSignupSubmit} className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
             <input
               name="name"
               type="text"
@@ -63,11 +89,9 @@ const SignUp = ({
             />
           </div>
 
-          {/* Email or Mobile */}
+          {/* Email or Phone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email address or Mobile number
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email address or Mobile number</label>
             <input
               name="emailOrPhone"
               type="text"
@@ -81,9 +105,7 @@ const SignUp = ({
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
             <div className="relative">
               <input
                 name="password"
@@ -106,9 +128,7 @@ const SignUp = ({
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm Password
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
             <div className="relative">
               <input
                 name="confirmPassword"
@@ -131,20 +151,12 @@ const SignUp = ({
 
           {/* Terms */}
           <div className="flex items-start space-x-2">
-            <input
-              type="checkbox"
-              required
-              className="mt-1 h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
-            />
+            <input type="checkbox" required className="mt-1 h-4 w-4 text-black focus:ring-black border-gray-300 rounded" />
             <label className="text-sm text-gray-600">
               I agree to the{' '}
-              <button type="button" className="text-black font-medium hover:underline">
-                Terms of Service
-              </button>{' '}
+              <button type="button" className="text-black font-medium hover:underline">Terms of Service</button>{' '}
               and{' '}
-              <button type="button" className="text-black font-medium hover:underline">
-                Privacy Policy
-              </button>
+              <button type="button" className="text-black font-medium hover:underline">Privacy Policy</button>
             </label>
           </div>
 
@@ -162,10 +174,7 @@ const SignUp = ({
         <div className="text-center mt-4 pt-4 border-t border-gray-200">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <button
-              onClick={handleSwitchMode}
-              className="text-black font-medium hover:underline"
-            >
+            <button onClick={handleSwitchMode} className="text-black font-medium hover:underline">
               Sign in
             </button>
           </p>

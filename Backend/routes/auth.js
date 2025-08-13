@@ -1,6 +1,5 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 require('dotenv').config();
 
@@ -51,7 +50,7 @@ router.post('/signup', async (req, res) => {
 
 /**
  * @route   POST /api/auth/login
- * @desc    Login user and return JWT token
+ * @desc    Login user without JWT
  */
 router.post('/login', async (req, res) => {
   try {
@@ -73,21 +72,11 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Create JWT token
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
+    // Send user data without password
+    const { password: pwd, ...userData } = user.toObject();
     res.json({
       message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        emailOrPhone: user.emailOrPhone,
-      }
+      user: userData
     });
 
   } catch (error) {
