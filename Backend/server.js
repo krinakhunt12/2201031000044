@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/adminAuth');
 require('dotenv').config();
 
 const app = express();
@@ -10,20 +12,21 @@ app.use(express.json());
 app.use(cors());
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authRoutes);
+app.use("/admin", adminRoutes);
 
 // Connect to MongoDB with TLS options
 mongoose.connect(process.env.MONGO_URI, {
-    tls: true,
-    tlsAllowInvalidCertificates: false,
-  })
-  .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
-  });
-  
+        tls: true,
+        tlsAllowInvalidCertificates: false,
+    })
+    .then(() => console.log('✅ MongoDB connected successfully'))
+    .catch(err => {
+        console.error('❌ MongoDB connection error:', err.message);
+        process.exit(1);
+    });
+
 
 app.listen(process.env.PORT || 5000, () => {
-  console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+    console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
 });

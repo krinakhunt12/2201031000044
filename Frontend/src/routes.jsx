@@ -51,6 +51,7 @@ import KidsPants from "./Pages/Subcategories/Kids/Pants";
 import KidsJackets from "./Pages/Subcategories/Kids/Jackets";
 import KidsSweaters from "./Pages/Subcategories/Kids/Sweaters";
 import KidsShorts from "./Pages/Subcategories/Kids/Shorts";
+import AdminLogin from "./Pages/AdminLogin";
 
 const AppRoutes = () => {
   return (
@@ -60,6 +61,9 @@ const AppRoutes = () => {
         <Route path="/shop" element={<Shop />} />
         <Route path="/about" element={<About />} />
         <Route path="/collections" element={<Collections />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
         <Route path="/search" element={<Search />} />
         {/* Shared dynamic category route */}
         <Route path="/category/:categoryName" element={<CategoryPage />} />

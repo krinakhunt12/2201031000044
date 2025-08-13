@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 
-const Login = ({ isOpen, onClose, isAdmin, handleSwitchToAdmin, handleSwitchMode }) => {
+const Login = ({ isOpen, onClose, handleSwitchMode }) => {
   const [loginFormData, setLoginFormData] = useState({
     emailOrPhone: '',
     password: '',
@@ -21,22 +21,23 @@ const Login = ({ isOpen, onClose, isAdmin, handleSwitchToAdmin, handleSwitchMode
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginFormData),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loginFormData),
+        }
+      );
 
       const data = await res.json();
 
       if (res.ok) {
-        // Save token and user info
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-
         alert('✅ Login successful!');
         onClose();
-        window.location.reload(); // optional: refresh UI after login
+        window.location.reload();
       } else {
         alert(data.message || '❌ Login failed');
       }
@@ -49,36 +50,11 @@ const Login = ({ isOpen, onClose, isAdmin, handleSwitchToAdmin, handleSwitchMode
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={isAdmin ? 'Admin Login' : 'Welcome back'}
-      size="md"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Welcome back" size="md">
       <div className="w-full max-w-md mx-auto">
         {/* Header Message */}
-        <div
-          className={`text-center mb-6 ${
-            isAdmin ? 'bg-red-50 p-4 rounded-lg border border-red-200' : ''
-          }`}
-        >
-          <h2
-            className={`text-2xl font-bold mb-2 ${
-              isAdmin ? 'text-red-800' : 'text-gray-900'
-            }`}
-          >
-            {isAdmin ? 'Admin Login' : ''}
-          </h2>
-          <p className={isAdmin ? 'text-red-600' : 'text-gray-600'}>
-            {isAdmin
-              ? 'Sign in to your admin account'
-              : 'Sign in to your Stylon account'}
-          </p>
-          {isAdmin && (
-            <div className="mt-2 text-xs text-red-500">
-              Demo: admin@stylon.com / admin123
-            </div>
-          )}
+        <div className="text-center mb-6">
+          <p className="text-gray-600">Sign in to your Stylon account</p>
         </div>
 
         {/* Google Button */}
@@ -152,28 +128,11 @@ const Login = ({ isOpen, onClose, isAdmin, handleSwitchToAdmin, handleSwitchMode
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-              isAdmin
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-black text-white hover:bg-gray-800'
-            }`}
+            className="w-full py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-black text-white hover:bg-gray-800"
           >
             {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-
-        {/* Switch to Admin */}
-        <div className="text-center mt-6 pt-6 border-t border-gray-200">
-          <p className="text-sm text-gray-600">
-            {isAdmin ? 'Need a user account?' : 'Admin login?'}{' '}
-            <button
-              onClick={handleSwitchToAdmin}
-              className="text-black font-medium hover:underline"
-            >
-              Click here
-            </button>
-          </p>
-        </div>
 
         {/* Switch to Signup */}
         <div className="text-center mt-4 pt-4 border-t border-gray-200">
