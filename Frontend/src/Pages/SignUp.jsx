@@ -24,13 +24,12 @@ const SignUp = ({
     >
       <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-6">
-        
+        <div className="text-center mb-4">
           <p className="text-gray-600">Join Stylon and start shopping</p>
         </div>
 
         {/* Google Button */}
-        <button className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-3 px-4 font-medium hover:bg-gray-50 transition-colors mb-6">
+        <button className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2 px-4 font-medium hover:bg-gray-50 transition-colors mb-6">
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
             alt="Google"
@@ -40,7 +39,7 @@ const SignUp = ({
         </button>
 
         {/* Divider */}
-        <div className="flex items-center mb-6">
+        <div className="flex items-center mb-4">
           <div className="flex-grow h-px bg-gray-200"></div>
           <span className="mx-4 text-sm text-gray-500">or</span>
           <div className="flex-grow h-px bg-gray-200"></div>
@@ -60,7 +59,7 @@ const SignUp = ({
               value={signupFormData.name}
               onChange={handleSignupInputChange}
               placeholder="Enter your full name"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
 
@@ -76,7 +75,7 @@ const SignUp = ({
               value={signupFormData.emailOrPhone}
               onChange={handleSignupInputChange}
               placeholder="Enter your email or mobile number"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
 
@@ -93,7 +92,7 @@ const SignUp = ({
                 value={signupFormData.password}
                 onChange={handleSignupInputChange}
                 placeholder="Create a password"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent pr-12"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent pr-12"
               />
               <button
                 type="button"
@@ -118,7 +117,7 @@ const SignUp = ({
                 value={signupFormData.confirmPassword}
                 onChange={handleSignupInputChange}
                 placeholder="Confirm your password"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent pr-12"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent pr-12"
               />
               <button
                 type="button"
@@ -153,7 +152,7 @@ const SignUp = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-black text-white py-2 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? 'Creating account...' : 'Create account'}
           </button>
