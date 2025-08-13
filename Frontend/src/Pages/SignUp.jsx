@@ -25,9 +25,7 @@ const SignUp = ({
       <div className="w-full max-w-md mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Create account
-          </h2>
+        
           <p className="text-gray-600">Join Stylon and start shopping</p>
         </div>
 
@@ -66,18 +64,18 @@ const SignUp = ({
             />
           </div>
 
-          {/* Email */}
+          {/* Email or Mobile */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email address
+              Email address or Mobile number
             </label>
             <input
-              name="email"
-              type="email"
+              name="emailOrPhone"
+              type="text"
               required
-              value={signupFormData.email}
+              value={signupFormData.emailOrPhone}
               onChange={handleSignupInputChange}
-              placeholder="Enter your email address"
+              placeholder="Enter your email or mobile number"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
