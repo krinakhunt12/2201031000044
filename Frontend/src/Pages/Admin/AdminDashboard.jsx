@@ -3,22 +3,19 @@ import {
   Package, 
   ShoppingCart, 
   TrendingUp, 
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Search,
+   User as UserIcon,
   ChevronDown,
   Settings,
   LogOut,
-  User,
   Bell,
-  MessageSquare
+    Menu,
 } from 'lucide-react';
 import Overview from '../../components/Admin/Overview';
 import Products from '../../components/Admin/Products';
 import Orders from '../../components/Admin/Orders';
 import Users from '../../components/Admin/Users';
+import Sidebar from '../../components/Admin/Sidebar';
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
@@ -123,101 +120,34 @@ const AdminDashboard = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <button 
-                className="md:hidden mr-2 text-gray-500 hover:text-gray-700"
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+return (
+  <div className="min-h-screen bg-gray-50 flex">
+    {/* Mobile sidebar overlay */}
+    {showMobileMenu && (
+      <div className="md:hidden fixed inset-0 z-40">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setShowMobileMenu(false)}></div>
+        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+          <div className="absolute top-0 right-0 -mr-12 pt-2">
+            <button
+              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <span className="sr-only">Close sidebar</span>
+              <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
+            <div className="flex-shrink-0 flex items-center px-4">
               <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <button 
-                  className="p-1 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 relative"
-                  onClick={() => setShowNotifications(!showNotifications)}
-                >
-                  <Bell className="w-5 h-5" />
-                  {notifications.some(n => !n.read) && (
-                    <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-                  )}
-                </button>
-                
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg overflow-hidden z-10">
-                    <div className="py-1">
-                      <div className="px-4 py-2 border-b bg-gray-50">
-                        <p className="text-sm font-medium text-gray-700">Notifications</p>
-                      </div>
-                      {notifications.map(notification => (
-                        <div 
-                          key={notification.id} 
-                          className={`px-4 py-3 hover:bg-gray-50 ${!notification.read ? 'bg-blue-50' : ''}`}
-                        >
-                          <p className="text-sm text-gray-700">{notification.message}</p>
-                          <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                        </div>
-                      ))}
-                      <div className="px-4 py-2 border-t bg-gray-50 text-center">
-                        <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-800">View all</a>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="relative">
-                <button 
-                  className="flex items-center space-x-2 focus:outline-none"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                >
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <User className="w-4 h-4 text-indigo-600" />
-                  </div>
-                  <span className="hidden md:inline text-sm font-medium text-gray-700">Admin</span>
-                  <ChevronDown className="hidden md:inline w-4 h-4 text-gray-500" />
-                </button>
-                
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      <User className="inline w-4 h-4 mr-2" /> Profile
-                    </a>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      <Settings className="inline w-4 h-4 mr-2" /> Settings
-                    </a>
-                    <div className="border-t border-gray-100"></div>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      <LogOut className="inline w-4 h-4 mr-2" /> Sign out
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile Menu */}
-      {showMobileMenu && (
-        <div className="md:hidden bg-white shadow-md">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <nav className="flex flex-col space-y-2">
+            <nav className="mt-5 px-2 space-y-1">
               {[
                 { id: 'overview', label: 'Overview', icon: TrendingUp },
                 { id: 'products', label: 'Products', icon: Package },
                 { id: 'orders', label: 'Orders', icon: ShoppingCart },
-                { id: 'users', label: 'Users', icon: User },
+                { id: 'users', label: 'Users', icon: UserIcon },
               ].map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -227,81 +157,94 @@ const AdminDashboard = () => {
                       setActiveTab(tab.id);
                       setShowMobileMenu(false);
                     }}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                    className={`group flex items-center px-2 py-2 text-base font-medium rounded-md w-full ${
                       activeTab === tab.id
-                        ? 'bg-black text-white'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span>{tab.label}</span>
+                    <Icon
+                      className={`mr-4 flex-shrink-0 h-6 w-6 ${
+                        activeTab === tab.id ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'
+                      }`}
+                    />
+                    {tab.label}
                   </button>
                 );
               })}
             </nav>
           </div>
         </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex space-x-2 mb-8">
-          {[
-            { id: 'overview', label: 'Overview', icon: TrendingUp },
-            { id: 'products', label: 'Products', icon: Package },
-            { id: 'orders', label: 'Orders', icon: ShoppingCart },
-            { id: 'users', label: 'Users', icon: User },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-black text-white'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {activeTab === 'overview' && (
-            <Overview stats={stats} orders={orders}/>
-          )}
-
-          {activeTab === 'products' && (
-<Products searchQuery={searchQuery}
-setSearchQuery={setSearchQuery}
-filteredProducts={filteredProducts}
-sortConfig={sortConfig}
-handleSort={handleSort}
-getStatusColor={getStatusColor}/>
-          )}
-
-          {activeTab === 'orders' && (
-        <Orders searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-        filteredOrders={filteredOrders} getStatusColor={getStatusColor}/>
-          )}
-
-         {activeTab === 'users' && (
-            <Users 
-              searchQuery={searchQuery} 
-              setSearchQuery={setSearchQuery} 
-              filteredUsers={filteredUsers} 
-              getStatusColor={getStatusColor} 
-              getRoleColor={getRoleColor}
-            />
-          )}
-        </div>
       </div>
+    )}
+
+    {/* Desktop sidebar - now fixed */}
+    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+    {/* Main content area with margin for fixed sidebar */}
+    <div className="flex-1 flex flex-col md:ml-64">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <button 
+                className="md:hidden mr-2 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowMobileMenu(true)}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <h1 className="text-xl font-semibold text-gray-900 capitalize">{activeTab}</h1>
+            </div>
+            
+            {/* ... (keep your existing header content) ... */}
+          </div>
+        </div>
+      </header>
+
+      {/* Scrollable main content */}
+      <main className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="px-4 sm:px-6 lg:px-8 py-6">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {activeTab === 'overview' && (
+              <Overview stats={stats} orders={orders}/>
+            )}
+
+            {activeTab === 'products' && (
+              <Products 
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filteredProducts={filteredProducts}
+                sortConfig={sortConfig}
+                handleSort={handleSort}
+                getStatusColor={getStatusColor}
+              />
+            )}
+
+            {activeTab === 'orders' && (
+              <Orders 
+                searchQuery={searchQuery} 
+                setSearchQuery={setSearchQuery}
+                filteredOrders={filteredOrders} 
+                getStatusColor={getStatusColor}
+              />
+            )}
+
+            {activeTab === 'users' && (
+              <Users 
+                searchQuery={searchQuery} 
+                setSearchQuery={setSearchQuery} 
+                filteredUsers={filteredUsers} 
+                getStatusColor={getStatusColor} 
+                getRoleColor={getRoleColor}
+              />
+            )}
+          </div>
+        </div>
+      </main>
     </div>
-  );
+  </div>
+);
 };
 
 export default AdminDashboard;
