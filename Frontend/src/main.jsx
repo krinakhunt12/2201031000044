@@ -6,14 +6,17 @@ import { Provider } from 'react-redux'
 import { store } from './store/index.js'
 import { ToastProvider } from './contexts/ToastContext'
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { AuthProvider } from './contexts/authContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    
-    <Provider store={store}>
+   
+        <Provider store={store}>
       <ToastProvider>
         <App />
       </ToastProvider>
     </Provider>
+     
+    
   </StrictMode>,
 )

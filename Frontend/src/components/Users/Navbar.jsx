@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { logout, login } from '../../features/auth/authSlice';
+// Remove Redux login import, keep logout for state cleanup if needed
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useSearch } from '../../hooks/useSearch';
@@ -48,17 +48,9 @@ const mainMenuItems = [
   { name: "Contact", path: "/contact" },
 ];
 
-const categories = [
-  "Men",
-  "Women",
-  "Kids",
-];
-
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  
-  // Auth form states (mode managed by useAuth)
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -75,7 +67,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { totalQuantity: cartCount } = useAppSelector(state => state.cart);
   const { items: wishlistItems } = useAppSelector(state => state.wishlist);
-  const { showSuccess } = useToast();
+  const { showSuccess, showError } = useToast();
   
   // Custom hooks
   const { 
@@ -83,10 +75,11 @@ const Navbar = () => {
     user, 
     isAdmin: userIsAdmin, 
     showAuthModal, 
-    authMode: hookAuthMode, 
+    authMode, 
     openLoginModal, 
     openSignUpModal, 
-    closeAuthModal 
+    closeAuthModal,
+    logout: authLogout
   } = useAuth();
   
   const {
@@ -102,7 +95,7 @@ const Navbar = () => {
   } = useSearch();
 
   const handleLogout = () => {
-    dispatch(logout());
+    authLogout();
     showSuccess('Logged out successfully');
     navigate('/');
   };
@@ -125,20 +118,23 @@ const Navbar = () => {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, create a mock user
       const mockUser = {
         id: 1,
         name: isAdmin ? 'Admin User' : 'John Doe',
         email: loginFormData.email,
         isAdmin: isAdmin
       };
-      
-      dispatch(login(mockUser));
+      // Use AuthContext login
+      if (typeof authLogout === 'function') {
+        // Defensive: if context provides login
+        if (typeof user === 'undefined' || !user) {
+          if (typeof useAuth().login === 'function') {
+            useAuth().login(mockUser);
+          }
+        }
+      }
       showSuccess(`Welcome back, ${mockUser.name}!`);
       closeAuthModal();
     } catch (error) {
@@ -150,27 +146,27 @@ const Navbar = () => {
 
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
-    
     if (signupFormData.password !== signupFormData.confirmPassword) {
       showError('Passwords do not match');
       return;
     }
-    
     setIsLoading(true);
-    
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, create a mock user
       const mockUser = {
         id: 1,
         name: signupFormData.name,
         email: signupFormData.email,
         isAdmin: false
       };
-      
-      dispatch(login(mockUser));
+      // Use AuthContext signup
+      if (typeof authLogout === 'function') {
+        if (typeof user === 'undefined' || !user) {
+          if (typeof useAuth().signup === 'function') {
+            useAuth().signup(mockUser);
+          }
+        }
+      }
       showSuccess(`Welcome to Stylon, ${mockUser.name}!`);
       closeAuthModal();
     } catch (error) {
@@ -181,7 +177,7 @@ const Navbar = () => {
   };
 
   const handleSwitchMode = () => {
-    if (hookAuthMode === 'login') {
+    if (authMode === 'login') {
       openSignUpModal();
     } else {
       openLoginModal();
@@ -191,8 +187,6 @@ const Navbar = () => {
   const handleSwitchToAdmin = () => {
     setIsAdmin(!isAdmin);
   };
-
-  // Outer modal helpers removed; individual forms handle their own modal UI
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -205,7 +199,7 @@ const Navbar = () => {
 
   return (
     <header className="font-poppins fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link
             to="/"
@@ -294,12 +288,11 @@ const Navbar = () => {
               )}
             </Link>
 
-            {/* Auth Buttons / User Menu */}
+            {/* User Profile Button - Shows when authenticated */}
             {isAuthenticated ? (
               <div className="relative group">
-                <button className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <User className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-800">{user?.name}</span>
+                <button className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
+                  <User className="w-5 h-5 text-gray-600" />
                 </button>
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white shadow-lg border border-gray-100 rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-40">
                   {userIsAdmin && (
@@ -375,7 +368,6 @@ const Navbar = () => {
                 Search
               </button>
               
-              {/* Search Suggestions */}
               <SearchSuggestions
                 suggestions={suggestions}
                 isVisible={showSuggestions}
@@ -387,7 +379,6 @@ const Navbar = () => {
           </div>
         </div>
       )}
-
 
       {/* Mobile Menu */}
       <div
@@ -407,7 +398,6 @@ const Navbar = () => {
             </Link>
           ))}
           
-          {/* Mobile Search */}
           <div className="pt-2">
             <form onSubmit={handleSearch} className="relative">
               <input
@@ -421,7 +411,6 @@ const Navbar = () => {
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               
-              {/* Mobile Search Suggestions */}
               <SearchSuggestions
                 suggestions={suggestions}
                 isVisible={showSuggestions}
@@ -432,7 +421,6 @@ const Navbar = () => {
             </form>
           </div>
 
-          {/* Mobile Auth */}
           {isAuthenticated ? (
             <div className="space-y-2 pt-2 border-t border-gray-200">
               <div className="text-sm text-gray-600 px-2">Welcome, {user?.name}</div>
@@ -487,8 +475,7 @@ const Navbar = () => {
         </div>
       </div>
       
-      {/* Auth Modal (render exactly one, based on mode from useAuth) */}
-      {hookAuthMode === 'login' ? (
+      {authMode === 'login' ? (
         <Login
           isOpen={showAuthModal}
           onClose={closeAuthModal}

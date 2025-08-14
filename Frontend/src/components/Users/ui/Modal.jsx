@@ -28,7 +28,7 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50  animate-in fade-in duration-300">
       {/* Center wrapper */}
       <div className="flex items-center justify-center min-h-screen p-4">
         <div
