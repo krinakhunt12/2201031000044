@@ -4,54 +4,54 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // Import your page components
-import Home from "./Pages/Home";
-import Shop from "./Pages/Shop";
-import About from "./Pages/About";
-import Collections from "./Pages/Collections";
-import CategoryPage from "./components/CategoryPage";
-import Contact from "./Pages/Contact";
-import Login from "../src/Pages/Login";
-import SignUp from "../src/Pages/SignUp";
-import Cart from "../src/Pages/Cart";
-import Wishlist from "../src/Pages/Wishlist";
-import AdminDashboard from "../src/Pages/AdminDashboard";
-import Search from "../src/Pages/Search";
-import Profile from "../src/Pages/Profile";
-import Checkout from "../src/Pages/Checkout";
-import ProductDetail from "../src/Pages/ProductDetail";
+import Home from "./Pages/Users/Home"
+import Shop from "./Pages/Users/Shop";
+import About from "./Pages/Users/About";
+import Collections from "./Pages/Users/Collections";
+import CategoryPage from "./components/Users/CategoryPage";
+import Contact from "./Pages/Users/Contact";
+import Login from "./Pages/Users/Login";
+import SignUp from "./Pages/Users/SignUp";
+import Cart from "./Pages/Users/Cart";
+import Wishlist from "./Pages/Users/Wishlist";
+import AdminDashboard from "./Pages/Admin/AdminDashboard";
+import Search from "./components/Users/Search";
+import Profile from "./Pages/Users/Profile";
+import Checkout from "./Pages/Users/Checkout";
+import ProductDetail from "./Pages/Users/ProductDetail";
 
 // Subcategory pages
 // Men
-import MenTshirts from "./Pages/Subcategories/Men/Tshirts";
-import MenShirts from "./Pages/Subcategories/Men/Shirts";
-import MenJeans from "./Pages/Subcategories/Men/Jeans";
-import MenShoes from "./Pages/Subcategories/Men/Shoes";
-import MenJackets from "./Pages/Subcategories/Men/Jackets";
-import MenShorts from "./Pages/Subcategories/Men/Shorts";
-import MenSweaters from "./Pages/Subcategories/Men/Sweaters";
+import MenTshirts from "./Pages/Users/Subcategories/Men/Tshirts";
+import MenShirts from "./Pages/Users/Subcategories/Men/Shirts";
+import MenJeans from "./Pages/Users/Subcategories/Men/Jeans";
+import MenShoes from "./Pages/Users/Subcategories/Men/Shoes";
+import MenJackets from "./Pages/Users/Subcategories/Men/Jackets";
+import MenShorts from "./Pages/Users/Subcategories/Men/Shorts";
+import MenSweaters from "./Pages/Users/Subcategories/Men/Sweaters";
 
 // Women
-import WomenDresses from "./Pages/Subcategories/Women/Dresses";
-import WomenTops from "./Pages/Subcategories/Women/Tops";
-import WomenBottoms from "./Pages/Subcategories/Women/Bottoms";
-import WomenAccessories from "./Pages/Subcategories/Women/Accessories";
-import WomenSkirts from "./Pages/Subcategories/Women/Skirts";
-import WomenJeans from "./Pages/Subcategories/Women/Jeans";
-import WomenJackets from "./Pages/Subcategories/Women/Jackets";
-import WomenSweaters from "./Pages/Subcategories/Women/Sweaters";
+import WomenDresses from "./Pages/Users/Subcategories/Women/Dresses";
+import WomenTops from "./Pages/Users/Subcategories/Women/Tops";
+import WomenBottoms from "./Pages/Users/Subcategories/Women/Bottoms";
+import WomenAccessories from "./Pages/Users/Subcategories/Women/Accessories";
+import WomenSkirts from "./Pages/Users/Subcategories/Women/Skirts";
+import WomenJeans from "./Pages/Users/Subcategories/Women/Jeans";
+import WomenJackets from "./Pages/Users/Subcategories/Women/Jackets";
+import WomenSweaters from "./Pages/Users/Subcategories/Women/Sweaters";
 
 // Kids
-import KidsClothing from "./Pages/Subcategories/Kids/Clothing";
-import KidsFootwear from "./Pages/Subcategories/Kids/Footwear";
-import KidsToys from "./Pages/Subcategories/Kids/Toys";
-import KidsAccessories from "./Pages/Subcategories/Kids/Accessories";
-import KidsTshirts from "./Pages/Subcategories/Kids/Tshirts";
-import KidsDresses from "./Pages/Subcategories/Kids/Dresses";
-import KidsPants from "./Pages/Subcategories/Kids/Pants";
-import KidsJackets from "./Pages/Subcategories/Kids/Jackets";
-import KidsSweaters from "./Pages/Subcategories/Kids/Sweaters";
-import KidsShorts from "./Pages/Subcategories/Kids/Shorts";
-import AdminLogin from "./Pages/AdminLogin";
+import KidsClothing from "./Pages/Users/Subcategories/Kids/Clothing";
+import KidsFootwear from "./Pages/Users/Subcategories/Kids/Footwear";
+import KidsToys from "./Pages/Users/Subcategories/Kids/Toys";
+import KidsAccessories from "./Pages/Users/Subcategories/Kids/Accessories";
+import KidsTshirts from "./Pages/Users/Subcategories/Kids/Tshirts";
+import KidsDresses from "./Pages/Users/Subcategories/Kids/Dresses";
+import KidsPants from "./Pages/Users/Subcategories/Kids/Pants";
+import KidsJackets from "./Pages/Users/Subcategories/Kids/Jackets";
+import KidsSweaters from "./Pages/Users/Subcategories/Kids/Sweaters";
+import KidsShorts from "./Pages/Users/Subcategories/Kids/Shorts";
+import AdminLogin from "./Pages/Admin/AdminLogin";
 
 const AppRoutes = () => {
   return (
