@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
-import Modal from '../../components/Users/ui/Modal';
+// Removed Modal import
 
-const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
+const SignUp = ({ handleSwitchMode }) => {
+  const navigate = useNavigate();
   const [signupFormData, setSignupFormData] = useState({
     name: '',
     emailOrPhone: '',
@@ -39,8 +41,11 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
       const data = await res.json();
 
       if (res.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
         alert('Signup successful!');
-        onClose();
+        window.dispatchEvent(new Event('auth-change'));
+        navigate('/');
       } else {
         alert(data.message || 'Signup failed');
       }
@@ -53,12 +58,12 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create account" size="md">
-      <div className="w-full max-w-md mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+      <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-2xl p-8">
         <div className="text-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Create account</h2>
           <p className="text-gray-600">Join Stylon and start shopping</p>
         </div>
-
         <button className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2 px-4 font-medium hover:bg-gray-50 transition-colors mb-6">
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -67,15 +72,12 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
           />
           Continue with Google
         </button>
-
         <div className="flex items-center mb-4">
           <div className="flex-grow h-px bg-gray-200"></div>
           <span className="mx-4 text-sm text-gray-500">or</span>
           <div className="flex-grow h-px bg-gray-200"></div>
         </div>
-
         <form onSubmit={handleSignupSubmit} className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
             <input
@@ -88,8 +90,6 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
-
-          {/* Email or Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Email address or Mobile number</label>
             <input
@@ -102,8 +102,6 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
-
-          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
             <div className="relative">
@@ -125,8 +123,6 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
               </button>
             </div>
           </div>
-
-          {/* Confirm Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
             <div className="relative">
@@ -148,8 +144,6 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
               </button>
             </div>
           </div>
-
-          {/* Terms */}
           <div className="flex items-start space-x-2">
             <input type="checkbox" required className="mt-1 h-4 w-4 text-black focus:ring-black border-gray-300 rounded" />
             <label className="text-sm text-gray-600">
@@ -159,8 +153,6 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
               <button type="button" className="text-black font-medium hover:underline">Privacy Policy</button>
             </label>
           </div>
-
-          {/* Submit */}
           <button
             type="submit"
             disabled={isLoading}
@@ -169,8 +161,6 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
             {isLoading ? 'Creating account...' : 'Create account'}
           </button>
         </form>
-
-        {/* Switch to Login */}
         <div className="text-center mt-4 pt-4 border-t border-gray-200">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
@@ -180,7 +170,7 @@ const SignUp = ({ isOpen, onClose, handleSwitchMode }) => {
           </p>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 

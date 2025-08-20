@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { 
   Package, 
   ShoppingCart, 
@@ -24,37 +25,44 @@ const AdminDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  const [stats] = useState({
-    totalUsers: 1247,
-    totalProducts: 89,
-    totalOrders: 156,
-    revenue: 125000,
-    newUsers: 32,
-    conversionRate: '4.2%',
-    avgOrderValue: 801.28
-  });
 
-  const [products, setProducts] = useState([
-    { id: 1, name: "Premium Black Tee", category: "T-Shirts", price: 1299, stock: 45, status: "active", sales: 124 },
-    { id: 2, name: "Classic White Tee", category: "T-Shirts", price: 999, stock: 32, status: "active", sales: 89 },
-    { id: 3, name: "Slim Fit Jeans", category: "Pants", price: 1999, stock: 12, status: "low stock", sales: 42 },
-    { id: 4, name: "Canvas Sneakers", category: "Footwear", price: 1599, stock: 8, status: "low stock", sales: 67 },
-    { id: 5, name: "Denim Jacket", category: "Outerwear", price: 2499, stock: 0, status: "out of stock", sales: 23 },
-  ]);
+  const [stats, setStats] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [orders] = useState([
-    { id: "ORD001", customer: "John Doe", amount: 2498, status: "pending", date: "2024-01-15", items: 2, payment: "Credit Card" },
-    { id: "ORD002", customer: "Jane Smith", amount: 1799, status: "shipped", date: "2024-01-14", items: 1, payment: "PayPal" },
-    { id: "ORD003", customer: "Robert Johnson", amount: 3297, status: "delivered", date: "2024-01-12", items: 3, payment: "Credit Card" },
-    { id: "ORD004", customer: "Emily Davis", amount: 999, status: "pending", date: "2024-01-16", items: 1, payment: "Cash on Delivery" },
-  ]);
-
-  const [users] = useState([
-    { id: 1, name: "John Doe", email: "john@example.com", status: "active", joinDate: "2024-01-01", role: "customer", lastActive: "2 hours ago" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", status: "active", joinDate: "2024-01-02", role: "customer", lastActive: "1 day ago" },
-    { id: 3, name: "Admin User", email: "admin@example.com", status: "active", joinDate: "2023-12-15", role: "admin", lastActive: "30 minutes ago" },
-    { id: 4, name: "Inactive User", email: "inactive@example.com", status: "inactive", joinDate: "2023-11-20", role: "customer", lastActive: "1 month ago" },
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [statsRes, productsRes, ordersRes, usersRes] = await Promise.all([
+          api.get('/stats'),
+          api.get('/products'),
+          api.get('/orders'),
+          api.get('/users'),
+        ]);
+        setStats({
+          totalUsers: statsRes.data.stats.users,
+          totalProducts: statsRes.data.stats.products,
+          totalOrders: statsRes.data.stats.orders,
+          revenue: statsRes.data.stats.revenue,
+          newUsers: 0, // You can add logic for new users
+          conversionRate: 'N/A', // Add logic if available
+          avgOrderValue: (statsRes.data.stats.revenue / (statsRes.data.stats.orders || 1)).toFixed(2)
+        });
+        setProducts(productsRes.data.products || []);
+        setOrders(ordersRes.data.orders || []);
+        setUsers(usersRes.data.users || []);
+      } catch (err) {
+        setError('Failed to load dashboard data');
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
 
   const [notifications] = useState([
     { id: 1, message: "New order received from John Doe", time: "10 mins ago", read: false },
@@ -82,21 +90,21 @@ const AdminDashboard = () => {
     return 0;
   });
 
-  const filteredProducts = sortedProducts.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProducts = products.filter(product =>
+    product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredOrders = orders.filter(order =>
-    order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.status.toLowerCase().includes(searchQuery.toLowerCase())
+    order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    order.customer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    order.status?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchQuery.toLowerCase())
+    user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.role?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getStatusColor = (status) => {
@@ -120,131 +128,137 @@ const AdminDashboard = () => {
     }
   };
 
-return (
-  <div className="min-h-screen bg-gray-50 flex">
-    {/* Mobile sidebar overlay */}
-    {showMobileMenu && (
-      <div className="md:hidden fixed inset-0 z-40">
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setShowMobileMenu(false)}></div>
-        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
-          <div className="absolute top-0 right-0 -mr-12 pt-2">
-            <button
-              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-              onClick={() => setShowMobileMenu(false)}
-            >
-              <span className="sr-only">Close sidebar</span>
-              <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-            <div className="flex-shrink-0 flex items-center px-4">
-              <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
-            </div>
-            <nav className="mt-5 px-2 space-y-1">
-              {[
-                { id: 'overview', label: 'Overview', icon: TrendingUp },
-                { id: 'products', label: 'Products', icon: Package },
-                { id: 'orders', label: 'Orders', icon: ShoppingCart },
-                { id: 'users', label: 'Users', icon: UserIcon },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setShowMobileMenu(false);
-                    }}
-                    className={`group flex items-center px-2 py-2 text-base font-medium rounded-md w-full ${
-                      activeTab === tab.id
-                        ? 'bg-gray-100 text-gray-900'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Icon
-                      className={`mr-4 flex-shrink-0 h-6 w-6 ${
-                        activeTab === tab.id ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'
-                      }`}
-                    />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </div>
-      </div>
-    )}
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-lg">Loading dashboard...</div>;
+  }
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center bg-red-50 text-lg text-red-600">{error}</div>;
+  }
 
-    {/* Desktop sidebar - now fixed */}
-    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-    {/* Main content area with margin for fixed sidebar */}
-    <div className="flex-1 flex flex-col md:ml-64">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <button 
-                className="md:hidden mr-2 text-gray-500 hover:text-gray-700"
-                onClick={() => setShowMobileMenu(true)}
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 flex">
+      {/* Mobile sidebar overlay */}
+      {showMobileMenu && (
+        <div className="md:hidden fixed inset-0 z-40">
+          <div className="fixed inset-0 bg-gray-700 bg-opacity-70" onClick={() => setShowMobileMenu(false)}></div>
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white rounded-r-2xl shadow-2xl">
+            <div className="absolute top-0 right-0 -mr-12 pt-2">
+              <button
+                className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                onClick={() => setShowMobileMenu(false)}
               >
-                <Menu className="w-6 h-6" />
+                <span className="sr-only">Close sidebar</span>
+                <svg className="h-6 w-6 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-              <h1 className="text-xl font-semibold text-gray-900 capitalize">{activeTab}</h1>
             </div>
-            
-            {/* ... (keep your existing header content) ... */}
+            <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
+              <div className="flex-shrink-0 flex items-center px-4">
+                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              </div>
+              <nav className="mt-5 px-2 space-y-1">
+                {[
+                  { id: 'overview', label: 'Overview', icon: TrendingUp },
+                  { id: 'products', label: 'Products', icon: Package },
+                  { id: 'orders', label: 'Orders', icon: ShoppingCart },
+                  { id: 'users', label: 'Users', icon: UserIcon },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setShowMobileMenu(false);
+                      }}
+                      className={`group flex items-center px-2 py-2 text-base font-medium rounded-md w-full transition-colors duration-200 ${
+                        activeTab === tab.id
+                          ? 'bg-gray-100 text-gray-900 shadow'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon
+                        className={`mr-4 flex-shrink-0 h-6 w-6 ${
+                          activeTab === tab.id ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500'
+                        }`}
+                      />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
           </div>
         </div>
-      </header>
+      )}
 
-      {/* Scrollable main content */}
-      <main className="flex-1 overflow-y-auto bg-gray-50">
-        <div className="px-4 sm:px-6 lg:px-8 py-6">
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {activeTab === 'overview' && (
-              <Overview stats={stats} orders={orders}/>
-            )}
+      {/* Desktop sidebar - now fixed */}
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-            {activeTab === 'products' && (
-              <Products 
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                filteredProducts={filteredProducts}
-                sortConfig={sortConfig}
-                handleSort={handleSort}
-                getStatusColor={getStatusColor}
-              />
-            )}
-
-            {activeTab === 'orders' && (
-              <Orders 
-                searchQuery={searchQuery} 
-                setSearchQuery={setSearchQuery}
-                filteredOrders={filteredOrders} 
-                getStatusColor={getStatusColor}
-              />
-            )}
-
-            {activeTab === 'users' && (
-              <Users 
-                searchQuery={searchQuery} 
-                setSearchQuery={setSearchQuery} 
-                filteredUsers={filteredUsers} 
-                getStatusColor={getStatusColor} 
-                getRoleColor={getRoleColor}
-              />
-            )}
+      {/* Main content area with margin for fixed sidebar */}
+      <div className="flex-1 flex flex-col md:ml-64">
+        {/* Header */}
+        <header className="bg-white shadow-md border-b sticky top-0 z-10 rounded-b-xl">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
+                <button 
+                  className="md:hidden mr-2 text-gray-500 hover:text-gray-700"
+                  onClick={() => setShowMobileMenu(true)}
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+                <h1 className="text-2xl font-bold text-gray-900 capitalize tracking-tight">{activeTab}</h1>
+              </div>
+              {/* ... (keep your existing header content) ... */}
+            </div>
           </div>
-        </div>
-      </main>
+        </header>
+
+        {/* Scrollable main content */}
+        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-white to-gray-100">
+          <div className="px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              {activeTab === 'overview' && stats && (
+                <Overview stats={stats} orders={orders}/>
+              )}
+
+              {activeTab === 'products' && (
+                <Products 
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  filteredProducts={filteredProducts}
+                  sortConfig={sortConfig}
+                  handleSort={handleSort}
+                  getStatusColor={getStatusColor}
+                />
+              )}
+
+              {activeTab === 'orders' && (
+                <Orders 
+                  searchQuery={searchQuery} 
+                  setSearchQuery={setSearchQuery}
+                  filteredOrders={filteredOrders} 
+                  getStatusColor={getStatusColor}
+                />
+              )}
+
+              {activeTab === 'users' && (
+                <Users 
+                  searchQuery={searchQuery} 
+                  setSearchQuery={setSearchQuery} 
+                  filteredUsers={filteredUsers} 
+                  getStatusColor={getStatusColor} 
+                  getRoleColor={getRoleColor}
+                />
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default AdminDashboard;

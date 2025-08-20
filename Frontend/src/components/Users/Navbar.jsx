@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ShoppingBag,
   Search,
@@ -12,7 +12,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { useAppSelector } from "../../store/hooks";
 // Remove Redux login import, keep logout for state cleanup if needed
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -54,32 +54,38 @@ const Navbar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loginFormData, setLoginFormData] = useState({ email: '', password: '' });
-  const [signupFormData, setSignupFormData] = useState({ 
-    name: '', 
-    email: '', 
-    password: '', 
-    confirmPassword: '' 
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const dispatch = useAppDispatch();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showProfileMenu && !event.target.closest('.profile-menu')) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showProfileMenu]);
+
   const navigate = useNavigate();
   const { totalQuantity: cartCount } = useAppSelector(state => state.cart);
   const { items: wishlistItems } = useAppSelector(state => state.wishlist);
-  const { showSuccess, showError } = useToast();
-  
-  // Custom hooks
-  const { 
-    isAuthenticated, 
-    user, 
-    isAdmin: userIsAdmin, 
-    showAuthModal, 
-    authMode, 
-    openLoginModal, 
-    openSignUpModal, 
+  const { showSuccess } = useToast();
+
+  // AuthContext
+  const {
+    isAuthenticated,
+    user,
+    isAdmin: userIsAdmin,
+    showAuthModal,
+    authMode,
+    openLoginModal,
+    openSignUpModal,
     closeAuthModal,
-    logout: authLogout
+    login,
+    signup,
+    logout
   } = useAuth();
   
   const {
@@ -263,19 +269,19 @@ const Navbar = () => {
             {/* Search Button */}
             <button 
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Search"
             >
               <Search className="w-5 h-5 text-gray-600" />
             </button>
 
             {/* Wishlist Button */}
-            <Link to="/wishlist" className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
+            <Link
+              to="/wishlist"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Wishlist"
+            >
               <Heart className="w-5 h-5 text-gray-600" />
-              {wishlistItems.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
-                  {wishlistItems.length}
-                </span>
-              )}
             </Link>
 
             {/* Cart Button */}
@@ -320,13 +326,13 @@ const Navbar = () => {
             ) : (
               <>
                 <button
-                  onClick={openLoginModal}
+                  onClick={() => navigate('/login')}
                   className="px-5 py-1.5 border border-gray-300 text-sm rounded-full font-medium text-gray-800 hover:text-black transition-all"
                 >
                   Login
                 </button>
                 <button
-                  onClick={openSignUpModal}
+                  onClick={() => navigate('/signup')}
                   className="px-5 py-1.5 bg-black text-white text-sm rounded-full font-medium hover:opacity-90 transition-all"
                 >
                   Sign Up
@@ -475,35 +481,7 @@ const Navbar = () => {
         </div>
       </div>
       
-      {authMode === 'login' ? (
-        <Login
-          isOpen={showAuthModal}
-          onClose={closeAuthModal}
-          isAdmin={isAdmin}
-          showPassword={showPassword}
-          setShowPassword={setShowPassword}
-          loginFormData={loginFormData}
-          handleLoginInputChange={handleLoginInputChange}
-          handleLoginSubmit={handleLoginSubmit}
-          isLoading={isLoading}
-          handleSwitchToAdmin={handleSwitchToAdmin}
-          handleSwitchMode={handleSwitchMode}
-        />
-      ) : (
-        <SignUp
-          isOpen={showAuthModal}
-          onClose={closeAuthModal}
-          showPassword={showPassword}
-          setShowPassword={setShowPassword}
-          showConfirmPassword={showConfirmPassword}
-          setShowConfirmPassword={setShowConfirmPassword}
-          signupFormData={signupFormData}
-          handleSignupInputChange={handleSignupInputChange}
-          handleSignupSubmit={handleSignupSubmit}
-          isLoading={isLoading}
-          handleSwitchMode={handleSwitchMode}
-        />
-      )}
+  {/* Removed modal-based Login/SignUp rendering. Use <Route path="/login" element={<Login />} /> and <Route path="/signup" element={<SignUp />} /> in your router. */}
     </header>
   );
 };

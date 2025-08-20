@@ -1,8 +1,9 @@
 import React, { useState } from "react";
+import api from '../../services/api';
 import { Search, Plus, Eye, Edit, Trash2, User, ChevronUp, ChevronDown } from "lucide-react";
 
 const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor, getRoleColor }) => {
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  // Sorting and pagination handled in parent (AdminDashboard)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -35,29 +36,47 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
     }
   };
 
-  // Sort users if sortConfig is not null
-  const sortedUsers = [...currentItems].sort((a, b) => {
-    if (sortConfig.key) {
-      const key = sortConfig.key.toLowerCase().replace(' ', '');
-      if (a[key] < b[key]) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (a[key] > b[key]) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
+
+  // API: Add User
+  const handleAddUser = async (userData) => {
+    try {
+      await api.post('/users', userData);
+      window.location.reload(); // Or refetch users in parent
+    } catch (err) {
+      alert('Failed to add user');
     }
-    return 0;
-  });
+  };
+
+  // API: Edit User
+  const handleEditUser = async (id, userData) => {
+    try {
+      await api.put(`/users/${id}`, userData);
+      window.location.reload();
+    } catch (err) {
+      alert('Failed to update user');
+    }
+  };
+
+  // API: Delete User
+  const handleDeleteUser = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    try {
+      await api.delete(`/users/${id}`);
+      window.location.reload();
+    } catch (err) {
+      alert('Failed to delete user');
+    }
+  };
 
   return (
-    <div className="space-y-6 p-6">
+  <div className="space-y-8 p-8 bg-gradient-to-br from-blue-50 via-white to-emerald-50 rounded-2xl shadow-xl border border-gray-100">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Users Management</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage system users and permissions</p>
+          <h2 className="text-3xl font-bold text-gray-900">Users Management</h2>
+          <p className="text-sm text-gray-500 mt-2">Manage system users and permissions</p>
         </div>
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -66,7 +85,7 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
             <input
               type="text"
               placeholder="Search users..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black w-full transition-all duration-200"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400 w-full transition-all duration-200"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -76,7 +95,7 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
           </div>
 
           {/* Add User Button */}
-          <button className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 flex items-center justify-center space-x-2 transition-colors duration-200">
+          <button className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-emerald-600 flex items-center justify-center space-x-2 transition-all duration-200 shadow-md font-semibold">
             <Plus className="w-4 h-4" />
             <span>Add User</span>
           </button>
@@ -84,9 +103,9 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
       </div>
 
       {/* Users Table */}
-      <div className="overflow-x-auto bg-white rounded-lg border shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+  <div className="overflow-x-auto bg-white rounded-2xl border shadow-lg">
+  <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-100">
             <tr>
               {[
                 { label: "User", key: "name" },
@@ -103,13 +122,7 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
                 >
                   <div className="flex items-center">
                     {col.label}
-                    {sortConfig.key === col.key && (
-                      sortConfig.direction === 'asc' ? (
-                        <ChevronUp className="ml-1 w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="ml-1 w-4 h-4" />
-                      )
-                    )}
+                    {/* Sorting handled in parent, no local sortConfig */}
                   </div>
                 </th>
               ))}
@@ -120,9 +133,9 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
           </thead>
 
           <tbody className="bg-white divide-y divide-gray-200">
-            {sortedUsers.length > 0 ? (
-              sortedUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 transition-colors duration-150">
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <tr key={user.id} className="hover:bg-blue-50 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
@@ -167,20 +180,22 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
                     <button
-                      className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-50 transition-colors duration-200"
+                      className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow"
                       title="View"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
-                      className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-50 transition-colors duration-200"
+                      className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-100 transition-colors duration-200 shadow"
                       title="Edit"
+                      onClick={() => handleEditUser(user._id, user)}
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50 transition-colors duration-200"
+                      className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors duration-200 shadow"
                       title="Delete"
+                      onClick={() => handleDeleteUser(user._id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -206,7 +221,7 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
 
       {/* Pagination */}
       {filteredUsers.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 bg-white rounded-lg border shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 bg-white rounded-2xl border shadow-lg mt-4">
           <div className="text-sm text-gray-500 mb-2 sm:mb-0">
             Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
             <span className="font-medium">

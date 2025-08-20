@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import api from '../../services/api';
 import {
   Search,
   Plus,
@@ -22,15 +23,42 @@ const Products = ({
   handleSort,
   getStatusColor,
 }) => {
-  const [products, setProducts] = useState([]);
+  // Products state is managed in AdminDashboard and passed as props
   const [showAddForm, setShowAddForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const handleAddProduct = (newProduct) => {
-    setProducts((prev) => [...prev, newProduct]);
-    setShowAddForm(false);
+  // API: Add Product
+  const handleAddProduct = async (productData) => {
+    try {
+      await api.post('/products', productData);
+      setShowAddForm(false);
+      window.location.reload(); // Or refetch products in parent
+    } catch (err) {
+      alert('Failed to add product');
+    }
+  };
+
+  // API: Edit Product
+  const handleEditProduct = async (id, productData) => {
+    try {
+      await api.put(`/products/${id}`, productData);
+      window.location.reload();
+    } catch (err) {
+      alert('Failed to update product');
+    }
+  };
+
+  // API: Delete Product
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    try {
+      await api.delete(`/products/${id}`);
+      window.location.reload();
+    } catch (err) {
+      alert('Failed to delete product');
+    }
   };
 
   // Pagination logic
@@ -166,7 +194,7 @@ const Products = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {currentItems.length > 0 ? (
               currentItems.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors duration-150">
+                <tr key={product._id || product.id || Math.random()} className="hover:bg-gray-50 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center">
@@ -185,7 +213,7 @@ const Products = ({
                           {product.name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          SKU: {product.id.toString().padStart(4, "0")}
+                          SKU: {(product.id ? product.id.toString().padStart(4, "0") : product._id || "N/A")}
                         </div>
                       </div>
                     </div>
@@ -196,7 +224,7 @@ const Products = ({
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ₹{product.price.toLocaleString()}
+                    ₹{product.price ? product.price.toLocaleString() : "N/A"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -220,7 +248,7 @@ const Products = ({
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {product.sales.toLocaleString()}
+                    {product.sales ? product.sales.toLocaleString() : "0"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
                     <button
@@ -232,12 +260,14 @@ const Products = ({
                     <button
                       className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-50 transition-colors duration-200"
                       title="Edit"
+                      onClick={() => handleEditProduct(product._id, product)}
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50 transition-colors duration-200"
                       title="Delete"
+                      onClick={() => handleDeleteProduct(product._id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
-import Modal from '../../components/Users/ui/Modal';
+// Removed Modal import
 
-const Login = ({ isOpen, onClose, handleSwitchMode }) => {
+const Login = ({ handleSwitchMode }) => {
+  const navigate = useNavigate();
   const [loginFormData, setLoginFormData] = useState({
     emailOrPhone: '',
     password: '',
@@ -36,8 +38,8 @@ const Login = ({ isOpen, onClose, handleSwitchMode }) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         alert('✅ Login successful!');
-        onClose();
-        window.location.reload();
+        window.dispatchEvent(new Event('auth-change'));
+        navigate('/');
       } else {
         alert(data.message || '❌ Login failed');
       }
@@ -50,14 +52,12 @@ const Login = ({ isOpen, onClose, handleSwitchMode }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Welcome back" size="md">
-      <div className="w-full max-w-md mx-auto">
-        {/* Header Message */}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+      <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-2xl p-8">
         <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h2>
           <p className="text-gray-600">Sign in to your Stylon account</p>
         </div>
-
-        {/* Google Button */}
         <button className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2 px-4 font-medium hover:bg-gray-50 transition-colors mb-6">
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -66,17 +66,12 @@ const Login = ({ isOpen, onClose, handleSwitchMode }) => {
           />
           Continue with Google
         </button>
-
-        {/* Divider */}
         <div className="flex items-center mb-6">
           <div className="flex-grow h-px bg-gray-200"></div>
           <span className="mx-4 text-sm text-gray-500">or</span>
           <div className="flex-grow h-px bg-gray-200"></div>
         </div>
-
-        {/* Login Form */}
         <form onSubmit={handleLoginSubmit} className="space-y-4">
-          {/* Email or Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email address or Mobile number
@@ -91,8 +86,6 @@ const Login = ({ isOpen, onClose, handleSwitchMode }) => {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
-
-          {/* Password Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Password
@@ -116,15 +109,11 @@ const Login = ({ isOpen, onClose, handleSwitchMode }) => {
               </button>
             </div>
           </div>
-
-          {/* Forgot Password */}
           <div className="text-right">
             <button type="button" className="text-sm text-gray-600 hover:text-black">
               Forgot your password?
             </button>
           </div>
-
-          {/* Submit */}
           <button
             type="submit"
             disabled={isLoading}
@@ -133,8 +122,6 @@ const Login = ({ isOpen, onClose, handleSwitchMode }) => {
             {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-
-        {/* Switch to Signup */}
         <div className="text-center mt-4 pt-4 border-t border-gray-200">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
@@ -147,7 +134,7 @@ const Login = ({ isOpen, onClose, handleSwitchMode }) => {
           </p>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 
