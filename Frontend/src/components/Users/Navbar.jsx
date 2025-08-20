@@ -101,7 +101,10 @@ const Navbar = () => {
   } = useSearch();
 
   const handleLogout = () => {
-    authLogout();
+    // Use logout from useAuth context
+    logout();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     showSuccess('Logged out successfully');
     navigate('/');
   };

@@ -6,18 +6,28 @@ import { removeFromCart, updateQuantity } from '../../features/cart/cartSlice';
 import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/Users/Navbar';
 import Footer from '../../components/Users/Footer';
+import { useAuth } from '../../hooks/useAuth';
 
 const Cart = () => {
   const dispatch = useAppDispatch();
   const { items: cartItems, totalAmount, totalQuantity } = useAppSelector(state => state.cart);
-  const { showSuccess } = useToast();
+  const { showSuccess, showError } = useToast();
+  const { isAuthenticated } = useAuth();
 
   const handleRemoveItem = (item) => {
+    if (!isAuthenticated) {
+      showError('Please log in to your account.');
+      return;
+    }
     dispatch(removeFromCart({ id: item.id, selectedSize: item.selectedSize }));
     showSuccess('Item removed from cart');
   };
 
   const handleUpdateQuantity = (item, newQuantity) => {
+    if (!isAuthenticated) {
+      showError('Please log in to your account.');
+      return;
+    }
     if (newQuantity <= 0) {
       handleRemoveItem(item);
     } else {

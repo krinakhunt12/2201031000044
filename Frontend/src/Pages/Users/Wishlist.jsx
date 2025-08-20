@@ -12,13 +12,22 @@ const Wishlist = () => {
   const dispatch = useAppDispatch();
   const { items: wishlistItems } = useAppSelector(state => state.wishlist);
   const { showSuccess, showError } = useToast();
+  const { isAuthenticated } = require('../../hooks/useAuth').useAuth();
 
   const handleRemoveFromWishlist = (item) => {
+    if (!isAuthenticated) {
+      showError('Please log in to your account.');
+      return;
+    }
     dispatch(removeFromWishlist({ id: item.id }));
     showSuccess('Item removed from wishlist');
   };
 
   const handleMoveToCart = (item) => {
+    if (!isAuthenticated) {
+      showError('Please log in to your account.');
+      return;
+    }
     dispatch(addToCart({
       ...item,
       quantity: 1,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import QuickViewModal from '../ui/QuickViewModal';
 import { motion } from "framer-motion";
 import { StarIcon, HeartIcon } from "@heroicons/react/24/solid";
 import { HeartIcon as HeartOutline } from "@heroicons/react/24/outline";
@@ -10,8 +11,9 @@ import { useToast } from '../../contexts/ToastContext';
 
 const ProductCard = ({ product, showColors = true, showRating = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'M');
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || 'Default');
+  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "");
+  const [showQuickView, setShowQuickView] = useState(false);
   
   const dispatch = useAppDispatch();
   const { items: wishlistItems } = useAppSelector(state => state.wishlist);
@@ -39,23 +41,18 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    dispatch(addToCart({
-      ...product,
-      quantity: 1,
-      selectedSize,
-      selectedColor,
-    }));
-    showSuccess('Added to cart');
+    setShowQuickView(true);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      transition={{ type: "spring", stiffness: 300 }}
-      className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 group"
-    >
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -5 }}
+        transition={{ type: "spring", stiffness: 300 }}
+        className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 group"
+      >
       <div className="relative">
         <Link to={`/product/${product.id}`}>
           <img
@@ -172,10 +169,16 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
           onClick={handleAddToCart}
           className="w-full bg-black text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
-          Add to Cart
+          Add
         </motion.button>
       </div>
-    </motion.div>
+      </motion.div>
+      <QuickViewModal
+        product={product}
+        isOpen={showQuickView}
+        onClose={() => setShowQuickView(false)}
+      />
+    </>
   );
 };
 

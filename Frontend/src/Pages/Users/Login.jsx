@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
-// Removed Modal import
+import { useAuth } from '../../hooks/useAuth'; // Add this import
 
 const Login = ({ handleSwitchMode }) => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // Get login from context
   const [loginFormData, setLoginFormData] = useState({
     emailOrPhone: '',
     password: '',
@@ -37,6 +38,7 @@ const Login = ({ handleSwitchMode }) => {
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        login(data.user, data.token); // <-- Add this line
         alert('✅ Login successful!');
         window.dispatchEvent(new Event('auth-change'));
         navigate('/');
