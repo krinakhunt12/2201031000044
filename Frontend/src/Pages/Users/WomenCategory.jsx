@@ -1,116 +1,118 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { StarIcon, HeartIcon, ShoppingBagIcon } from "@heroicons/react/24/solid";
 import { HeartIcon as HeartOutline, ArrowsPointingOutIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import Navbar from "../../components/Users/Navbar";
 import Footer from "../../components/Users/Footer";
-import womenProducts from "../../constants/womenCollection";
+import ProductCard from "../../components/Users/ProductCard";
+import { productAPI } from "../../services/api";
 
-const ProductCard = ({ product }) => {
-  const [isWishlisted, setIsWishlisted] = React.useState(false);
-  const [quickViewOpen, setQuickViewOpen] = React.useState(false);
 
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 group relative">
-      <div className="relative overflow-hidden">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-        <button 
-          onClick={() => setIsWishlisted(!isWishlisted)} 
-          className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm z-10"
-        >
-          {isWishlisted ? <HeartIcon className="w-5 h-5 text-red-500" /> : <HeartOutline className="w-5 h-5 text-gray-600" />}
-        </button>
-        <button 
-          onClick={() => setQuickViewOpen(true)} 
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        >
-          <ArrowsPointingOutIcon className="w-4 h-4" /> Quick View
-        </button>
-        {product.id % 3 === 0 && (
-          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md z-10">SALE</div>
-        )}
-      </div>
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold text-gray-800 line-clamp-1">{product.name}</h3>
-          <div className="flex items-center bg-gray-100 px-2 py-1 rounded-full">
-            <StarIcon className="w-4 h-4 text-yellow-400 mr-1" />
-            <span className="text-xs font-medium">{product.rating}</span>
-          </div>
-        </div>
-        <p className="text-gray-500 text-sm mb-2 line-clamp-2">{product.description || "Elegant and stylish design"}</p>
-        <div className="flex items-center justify-between">
-          <p className="text-pink-600 font-bold text-lg">₹{product.price}</p>
-          <button className="bg-gray-900 text-white p-2 rounded-lg flex items-center gap-1 hover:bg-gray-800 transition-colors">
-            <ShoppingBagIcon className="w-4 h-4" /> <span className="text-sm">Add</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-const CategoryCard = ({ category, image, productCount, path }) => (
+const CategoryCard = ({ category, image, productCount, path, icon }) => (
   <Link to={path} className="group">
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="relative h-48 overflow-hidden">
+    <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
+      <div className="relative h-56 overflow-hidden">
         <img
           src={image}
           alt={category}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-      </div>
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">{category}</h3>
-        <p className="text-sm text-gray-600">{productCount} items</p>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="flex items-center mb-2">
+            <span className="text-2xl mr-2">{icon}</span>
+            <h3 className="text-xl font-bold text-white">{category}</h3>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-white/90 text-sm">{productCount} items</p>
+            <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </Link>
 );
 
 const WomenCategory = () => {
-  // Clothing categories only
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await productAPI.getProductsByCategory('women');
+        if (response.success) {
+          setProducts(response.products);
+        } else {
+          setError("Failed to fetch products");
+        }
+      } catch (err) {
+        setError("Error fetching products");
+        console.error("Error fetching products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Group products by type to get counts
+  const getProductCountByType = (productType) => {
+    return products.filter(product => product.productType === productType).length;
+  };
+
+  // Women-specific clothing categories (no duplicates)
   const clothingCategories = [
     {
       name: "Dresses",
       path: "/category/women/dresses",
       image: "https://images.unsplash.com/photo-1520975918318-8e9730b8da49?auto=format&fit=crop&w=800&q=80",
-      productCount: womenProducts["Dresses"]?.length || 0
+      productCount: getProductCountByType("Dresses"),
+      icon: "👗"
     },
     {
       name: "Tops",
       path: "/category/women/tops",
       image: "https://images.unsplash.com/photo-1618354691373-d851c4f54da8?auto=format&fit=crop&w=800&q=80",
-      productCount: womenProducts["Tops"]?.length || 0
+      productCount: getProductCountByType("Tops"),
+      icon: "👚"
     },
     {
       name: "Skirts",
       path: "/category/women/skirts",
       image: "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=800&q=80",
-      productCount: 6
+      productCount: getProductCountByType("Skirts"),
+      icon: "👘"
     },
     {
       name: "Jeans",
       path: "/category/women/jeans",
       image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=800&q=80",
-      productCount: 8
+      productCount: getProductCountByType("Jeans"),
+      icon: "👖"
     },
     {
       name: "Jackets",
       path: "/category/women/jackets",
       image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80",
-      productCount: 7
+      productCount: getProductCountByType("Jackets"),
+      icon: "🧥"
     },
     {
       name: "Sweaters",
       path: "/category/women/sweaters",
       image: "https://images.unsplash.com/photo-1434389677669-e08b5c808b32?auto=format&fit=crop&w=800&q=80",
-      productCount: 9
+      productCount: getProductCountByType("Sweaters"),
+      icon: "🧶"
     }
   ];
 
@@ -142,10 +144,12 @@ const WomenCategory = () => {
     }
   ];
 
-  // Popular items from all categories
-  const popularItems = Object.values(womenProducts)
-    .flat()
-    .sort((a, b) => b.rating - a.rating)
+  // Popular items from all categories - remove duplicates by ID
+  const popularItems = products
+    .filter((product, index, self) => 
+      index === self.findIndex(p => p._id === product._id)
+    )
+    .sort((a, b) => (b.rating || 4.5) - (a.rating || 4.5))
     .slice(0, 8);
 
   return (
@@ -218,11 +222,26 @@ const WomenCategory = () => {
             <h2 className="text-3xl font-bold text-gray-900">Popular Items</h2>
             <button className="text-gray-600 hover:text-black font-medium">View All</button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {popularItems.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading products...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-600">{error}</p>
+            </div>
+          ) : popularItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {popularItems.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No products found</p>
+            </div>
+          )}
         </section>
 
         {/* Newsletter */}

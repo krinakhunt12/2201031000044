@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ShoppingBag, X, ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
@@ -105,11 +105,34 @@ const Cart = () => {
                   className="p-4 flex items-center justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-4 flex-1">
-                    <img
-                      src={item.image || `https://picsum.photos/seed/${item.id}/120/120`}
-                      alt={item.name}
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover border border-gray-200"
-                    />
+                        {/* Use a stable URL for product photo served by backend. */}
+                        {(() => {
+                          const apiBase = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL
+                            ? import.meta.env.VITE_API_URL
+                            : `${window.location.protocol}//${window.location.host}`;
+                          let photoUrl;
+                          if (item.photos && item.photos.length > 0) {
+                            const firstPhoto = item.photos[0];
+                            if (typeof firstPhoto === 'string' && /^https?:\/\//i.test(firstPhoto)) {
+                              photoUrl = firstPhoto;
+                            } else if (typeof firstPhoto === 'string') {
+                              photoUrl = `${apiBase.replace(/\/$/, '')}${firstPhoto.startsWith('/') ? firstPhoto : '/' + firstPhoto}`;
+                            } else {
+                              photoUrl = `${apiBase}/api/products/${item.id}/photo/0`;
+                            }
+                          } else if (item.image) {
+                            photoUrl = item.image;
+                          } else {
+                            photoUrl = `https://picsum.photos/seed/${item.id}/120/120`;
+                          }
+                          return (
+                            <img
+                              src={photoUrl}
+                              alt={item.name}
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover border border-gray-200"
+                            />
+                          );
+                        })()}
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{item.name}</h3>
                       <p className="text-sm text-gray-500">

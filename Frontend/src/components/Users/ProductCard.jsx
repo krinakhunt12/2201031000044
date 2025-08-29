@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import QuickViewModal from '../ui/QuickViewModal';
 import { motion } from "framer-motion";
 import { StarIcon, HeartIcon } from "@heroicons/react/24/solid";
@@ -11,8 +11,8 @@ import { useToast } from '../../contexts/ToastContext';
 
 const ProductCard = ({ product, showColors = true, showRating = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || 'Default');
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "");
+  const [selectedColor, setSelectedColor] = useState(product.color || 'Default');
+  const [selectedSize, setSelectedSize] = useState(product.size || "");
   const [showQuickView, setShowQuickView] = useState(false);
   
   const dispatch = useAppDispatch();
@@ -21,16 +21,31 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
   
   // Check if product is in wishlist
   useEffect(() => {
-    setIsWishlisted(wishlistItems.some(item => item.id === product.id));
-  }, [wishlistItems, product.id]);
+    setIsWishlisted(wishlistItems.some(item => item.id === product._id));
+  }, [wishlistItems, product._id]);
+
+  // Robust, memoized product image URL. Handles absolute URLs returned by the API
+  // or relative paths. Falls back to product.image or placeholder.
+  const productImage = useMemo(() => {
+    if (product.photos && product.photos.length > 0) {
+      // Use the photo URL directly as returned by backend
+      const photoUrl = product.photos[0];
+      // Ensure the URL is absolute
+      if (photoUrl && !photoUrl.startsWith('http')) {
+        return `${window.location.protocol}//${window.location.host}${photoUrl}`;
+      }
+      return photoUrl;
+    }
+    return product.image || 'https://via.placeholder.com/400x500?text=No+Image';
+  }, [product.photos, product.image]);
 
   // Format price with commas
-  const formattedPrice = product.price.toLocaleString('en-IN');
+  const formattedPrice = product.price ? product.price.toLocaleString('en-IN') : "0";
   const formattedSalePrice = product.salePrice ? product.salePrice.toLocaleString('en-IN') : null;
 
   const handleWishlistToggle = () => {
     if (isWishlisted) {
-      dispatch(removeFromWishlist({ id: product.id }));
+      dispatch(removeFromWishlist({ id: product._id }));
       showSuccess('Removed from wishlist');
     } else {
       dispatch(addToWishlist(product));
@@ -54,11 +69,17 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
         className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 group"
       >
       <div className="relative">
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product._id}`}>
           <img
-            src={product.image}
+            src={productImage}
             alt={product.name}
             className="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              if (e.currentTarget.dataset.hasError) return;
+              e.currentTarget.dataset.hasError = 'true';
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = 'https://via.placeholder.com/400x500?text=No+Image';
+            }}
           />
         </Link>
         
@@ -95,7 +116,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
       
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <Link to={`/product/${product.id}`} className="flex-1">
+          <Link to={`/product/${product._id}`} className="flex-1">
             <h3 className="text-lg font-semibold text-gray-800 line-clamp-1 hover:text-black transition-colors">
               {product.name}
             </h3>
@@ -121,45 +142,25 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
         </div>
         
         {/* Size Selection */}
-        {product.sizes && product.sizes.length > 0 && (
+        {product.size && (
           <div className="mb-3">
             <span className="text-xs text-gray-500 block mb-1">Size:</span>
             <div className="flex space-x-1">
-              {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`px-2 py-1 text-xs rounded border transition-colors ${
-                    selectedSize === size
-                      ? 'border-black bg-black text-white'
-                      : 'border-gray-300 text-gray-600 hover:border-gray-400'
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
+              <span className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600">
+                {product.size}
+              </span>
             </div>
           </div>
         )}
         
         {/* Color Selection */}
-        {showColors && product.colors && product.colors.length > 0 && (
+        {showColors && product.color && (
           <div className="mb-3">
             <span className="text-xs text-gray-500 block mb-1">Color:</span>
             <div className="flex space-x-1">
-              {product.colors.map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setSelectedColor(color)}
-                  className={`w-5 h-5 rounded-full border-2 transition-all ${
-                    selectedColor === color
-                      ? 'border-black scale-110'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  style={{ backgroundColor: color }}
-                  aria-label={color}
-                />
-              ))}
+              <span className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600">
+                {product.color}
+              </span>
             </div>
           </div>
         )}

@@ -18,8 +18,13 @@ import Wishlist from "./Pages/Users/Wishlist";
 import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import Search from "./components/Users/Search";
 import Profile from "./Pages/Users/Profile";
-import Checkout from "./Pages/Users/Checkout";
+import CheckoutPage from "./Pages/Users/CheckoutPage";
 import ProductDetail from "./Pages/Users/ProductDetail";
+
+// Main category pages
+import MenCategory from "./Pages/Users/MenCategory";
+import WomenCategory from "./Pages/Users/WomenCategory";
+import KidsCategory from "./Pages/Users/KidsCategory";
 
 // Subcategory pages
 // Men
@@ -33,18 +38,13 @@ import MenSweaters from "./Pages/Users/Subcategories/Men/Sweaters";
 // Women
 import WomenDresses from "./Pages/Users/Subcategories/Women/Dresses";
 import WomenTops from "./Pages/Users/Subcategories/Women/Tops";
-// import WomenBottoms from "./Pages/Users/Subcategories/Women/Bottoms";
-// import WomenAccessories from "./Pages/Users/Subcategories/Women/Accessories";
+import WomenBottoms from "./Pages/Users/Subcategories/Women/Bottoms";
 import WomenSkirts from "./Pages/Users/Subcategories/Women/Skirts";
 import WomenJeans from "./Pages/Users/Subcategories/Women/Jeans";
 import WomenJackets from "./Pages/Users/Subcategories/Women/Jackets";
 import WomenSweaters from "./Pages/Users/Subcategories/Women/Sweaters";
 
 // Kids
-// import KidsClothing from "./Pages/Users/Subcategories/Kids/Clothing";
-// import KidsFootwear from "./Pages/Users/Subcategories/Kids/Footwear";
-// import KidsToys from "./Pages/Users/Subcategories/Kids/Toys";
-// import KidsAccessories from "./Pages/Users/Subcategories/Kids/Accessories";
 import KidsTshirts from "./Pages/Users/Subcategories/Kids/Tshirts";
 import KidsDresses from "./Pages/Users/Subcategories/Kids/Dresses";
 import KidsPants from "./Pages/Users/Subcategories/Kids/Pants";
@@ -66,6 +66,12 @@ const AppRoutes = () => {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
           <Route path="/search" element={<Search />} />
+          
+          {/* Main category routes */}
+          <Route path="/category/men" element={<MenCategory />} />
+          <Route path="/category/women" element={<WomenCategory />} />
+          <Route path="/category/kids" element={<KidsCategory />} />
+          
           {/* Shared dynamic category route */}
           <Route path="/category/:categoryName" element={<CategoryPage />} />
           
@@ -81,18 +87,13 @@ const AppRoutes = () => {
           {/* Women */}
           <Route path="/category/women/dresses" element={<WomenDresses />} />
           <Route path="/category/women/tops" element={<WomenTops />} />
-          {/* <Route path="/category/women/bottoms" element={<WomenBottoms />} />
-          <Route path="/category/women/accessories" element={<WomenAccessories />} /> */}
+          <Route path="/category/women/bottoms" element={<WomenBottoms />} />
           <Route path="/category/women/skirts" element={<WomenSkirts />} />
           <Route path="/category/women/jeans" element={<WomenJeans />} />
           <Route path="/category/women/jackets" element={<WomenJackets />} />
           <Route path="/category/women/sweaters" element={<WomenSweaters />} />
           
           {/* Kids */}
-          {/* <Route path="/category/kids/clothing" element={<KidsClothing />} />
-          <Route path="/category/kids/footwear" element={<KidsFootwear />} />
-          <Route path="/category/kids/toys" element={<KidsToys />} />
-          <Route path="/category/kids/accessories" element={<KidsAccessories />} /> */}
           <Route path="/category/kids/tshirts" element={<KidsTshirts />} />
           <Route path="/category/kids/dresses" element={<KidsDresses />} />
           <Route path="/category/kids/pants" element={<KidsPants />} />
@@ -107,7 +108,7 @@ const AppRoutes = () => {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           {/* Catch-all route for 404 */}
           {/* <Route path="*" element={<NotFound />} /> */}

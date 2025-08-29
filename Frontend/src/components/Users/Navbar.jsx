@@ -21,6 +21,35 @@ import Modal from './ui/Modal';
 import SearchSuggestions from './search/SearchSuggestions';
 import SignUp from "../../Pages/Users/SignUp";
 import Login from "../../Pages/Users/Login";
+import DynamicNavigation from './DynamicNavigation';
+
+// Define category-specific product types to eliminate duplicates
+const categoryProductTypes = {
+  Men: [
+    { name: "T-Shirts", path: "tshirts", icon: "👕" },
+    { name: "Shirts", path: "shirts", icon: "👔" },
+    { name: "Jackets", path: "jackets", icon: "🧥" },
+    { name: "Jeans", path: "jeans", icon: "👖" },
+    { name: "Shorts", path: "shorts", icon: "🩳" },
+    { name: "Sweaters", path: "sweaters", icon: "🧶" }
+  ],
+  Women: [
+    { name: "Dresses", path: "dresses", icon: "👗" },
+    { name: "Tops", path: "tops", icon: "👚" },
+    { name: "Skirts", path: "skirts", icon: "👘" },
+    { name: "Jeans", path: "jeans", icon: "👖" },
+    { name: "Jackets", path: "jackets", icon: "🧥" },
+    { name: "Sweaters", path: "sweaters", icon: "🧶" }
+  ],
+  Kids: [
+    { name: "T-Shirts", path: "tshirts", icon: "👕" },
+    { name: "Dresses", path: "dresses", icon: "👗" },
+    { name: "Pants", path: "pants", icon: "👖" },
+    { name: "Jackets", path: "jackets", icon: "🧥" },
+    { name: "Sweaters", path: "sweaters", icon: "🧶" },
+    { name: "Shorts", path: "shorts", icon: "🩳" }
+  ]
+};
 
 const categoryData = [
   {
@@ -221,39 +250,7 @@ const Navbar = () => {
           <nav className="hidden md:flex space-x-8 relative">
             {mainMenuItems.map(({ name, path }) =>
               name === "Shop" ? (
-                <div key={name} className="relative group">
-                  <span className="cursor-pointer text-gray-800 hover:text-black font-medium">
-                    {name}
-                  </span>
-                  <div className="absolute top-full left-0 mt-2 flex bg-white shadow-lg border border-gray-100 rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-40">
-                    <div className="w-56 py-2">
-                      {categoryData.map((cat) => (
-                        <div key={cat.name} className="relative group-hover:flex group/sub">
-                          <Link
-                            to={cat.path}
-                            className="px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 hover:text-black flex justify-between items-center w-full"
-                          >
-                            {cat.name}
-                            <ChevronRight className="w-4 h-4 ml-1" />
-                          </Link>
-                          <div className="absolute top-0 left-full ml-1 w-48 bg-white border border-gray-200 shadow-lg rounded-md opacity-0 invisible group-hover/sub:opacity-100 group-hover/sub:visible transition-all duration-200 z-50">
-                            {cat.subcategories.map((sub, idx) => (
-                              <Link
-                                key={idx}
-                                to={`${cat.path}/${sub
-                                  .toLowerCase()
-                                  .replace(/[^a-z0-9]/g, "")}`}
-                                className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-black"
-                              >
-                                {sub}
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <DynamicNavigation key={name} />
               ) : (
                 <Link
                   key={name}
@@ -392,20 +389,49 @@ const Navbar = () => {
       {/* Mobile Menu */}
       <div
         className={`md:hidden bg-white/95 backdrop-blur-md transform transition-all duration-300 ${
-          isMenuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
+          isMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         } overflow-hidden border-t border-gray-100`}
       >
         <div className="px-4 py-4 space-y-4">
-          {mainMenuItems.map(({ name, path }) => (
-            <Link
-              key={name}
-              to={path}
-              onClick={() => setIsMenuOpen(false)}
-              className="block text-gray-800 hover:text-black font-medium transition-colors"
-            >
-              {name}
-            </Link>
-          ))}
+          {mainMenuItems.map(({ name, path }) => 
+            name === "Shop" ? (
+              <div key={name} className="space-y-2">
+                <div className="text-gray-800 font-medium">Shop</div>
+                {Object.keys(categoryProductTypes).map((category) => (
+                  <div key={category} className="ml-4 space-y-1">
+                    <Link
+                      to={`/category/${category.toLowerCase()}`}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block text-gray-600 hover:text-black font-medium transition-colors"
+                    >
+                      {category}
+                    </Link>
+                    <div className="ml-4 space-y-1">
+                      {categoryProductTypes[category].map((productType, idx) => (
+                        <Link
+                          key={idx}
+                          to={`/category/${category.toLowerCase()}/${productType.path}`}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="block text-sm text-gray-500 hover:text-black transition-colors"
+                        >
+                          {productType.icon} {productType.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Link
+                key={name}
+                to={path}
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-800 hover:text-black font-medium transition-colors"
+              >
+                {name}
+              </Link>
+            )
+          )}
           
           <div className="pt-2">
             <form onSubmit={handleSearch} className="relative">

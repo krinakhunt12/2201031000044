@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import api from '../../services/api';
+import { orderAPI } from "../../services/api";
 import {
   Search,
   Filter,
@@ -9,11 +9,21 @@ import {
   Shield,
   ChevronDown,
   ChevronUp,
+  Package,
+  Trash2,
+  MapPin,
+  Phone,
+  Mail,
+  Calendar,
+  User as UserIcon,
 } from "lucide-react";
 
 const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor }) => {
   // Sorting and pagination handled in parent (AdminDashboard)
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [editingStatus, setEditingStatus] = useState(null);
   const itemsPerPage = 5;
 
   // Sorting functionality
@@ -41,21 +51,48 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
     }
   };
 
+  // View order details
+  const handleViewOrder = async (orderId) => {
+    try {
+      const response = await orderAPI.getOrderById(orderId);
+      setSelectedOrder(response.order);
+      setShowOrderDetails(true);
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      alert('Failed to load order details');
+    }
+  };
+
+  // Handle status change
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await orderAPI.updateOrderStatus(orderId, newStatus);
+      setEditingStatus(null);
+      window.location.reload(); // Refresh the orders list
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      alert('Failed to update order status');
+    }
+  };
+
+  const statusOptions = ['pending', 'Paid', 'Payment Failed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+
 
   // API: Add Order
   const handleAddOrder = async (orderData) => {
     try {
-      await api.post('/orders', orderData);
+      // This would require creating an addOrder API endpoint
+      console.log('Add order functionality not implemented yet');
       window.location.reload(); // Or refetch orders in parent
     } catch (err) {
       alert('Failed to add order');
     }
   };
 
-  // API: Edit Order
+  // API: Edit Order Status
   const handleEditOrder = async (id, orderData) => {
     try {
-      await api.put(`/orders/${id}`, orderData);
+      await orderAPI.updateOrderStatus(id, orderData.status);
       window.location.reload();
     } catch (err) {
       alert('Failed to update order');
@@ -66,7 +103,7 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
   const handleDeleteOrder = async (id) => {
     if (!window.confirm('Are you sure you want to delete this order?')) return;
     try {
-      await api.delete(`/orders/${id}`);
+      await orderAPI.deleteOrder(id);
       window.location.reload();
     } catch (err) {
       alert('Failed to delete order');
@@ -149,22 +186,35 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
               currentItems.map((order) => (
                 <tr key={order.id} className="hover:bg-blue-50 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{order.id}
+                    #{order.id || order._id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{order.customer}</div>
-                    <div className="text-xs text-gray-500">{order.email}</div>
+                    <div className="text-xs text-gray-500">{order.email || 'No email'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     ₹{order.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{order.items}</div>
-                    <div className="text-xs text-gray-500">{order.quantity} items</div>
+                    <div className="text-sm text-gray-900">
+                      {order.products && order.products.length > 0 
+                        ? order.products.map(p => p.name).join(', ')
+                        : order.items || 'Unknown items'
+                      }
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {order.products && order.products.length > 0 
+                        ? `${order.products.reduce((sum, p) => sum + p.quantity, 0)} items`
+                        : `${order.quantity || 1} items`
+                      }
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {order.payment === "Credit Card" && (
+                        <CreditCard className="w-4 h-4 mr-2 text-blue-500" />
+                      )}
+                      {order.payment === "Stripe" && (
                         <CreditCard className="w-4 h-4 mr-2 text-blue-500" />
                       )}
                       {order.payment === "PayPal" && (
@@ -172,15 +222,36 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
                       )}
                       <span className="text-sm text-gray-700">{order.payment}</span>
                     </div>
+                    {order.paymentStatus && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Payment: {order.paymentStatus}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                        order.status
-                      )}`}
-                    >
-                      {order.status}
-                    </span>
+                    {editingStatus === order._id ? (
+                      <select
+                        className="text-xs border rounded px-2 py-1"
+                        defaultValue={order.status}
+                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                        onBlur={() => setEditingStatus(null)}
+                        autoFocus
+                      >
+                        {statusOptions.map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className={`px-3 py-1 text-xs font-semibold rounded-full cursor-pointer ${getStatusColor(
+                          order.status
+                        )}`}
+                        onClick={() => setEditingStatus(order._id)}
+                        title="Click to edit status"
+                      >
+                        {order.status}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{order.date}</div>
@@ -189,16 +260,24 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
                     <button
                       className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow"
-                      title="View"
+                      title="View Details"
+                      onClick={() => handleViewOrder(order._id)}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
                       className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-100 transition-colors duration-200 shadow"
-                      title="Edit"
-                      onClick={() => handleEditOrder(order._id, order)}
+                      title="Edit Status"
+                      onClick={() => setEditingStatus(order._id)}
                     >
                       <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors duration-200 shadow"
+                      title="Delete Order"
+                      onClick={() => handleDeleteOrder(order._id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
@@ -266,6 +345,132 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
       )}
     </div>
   );
+
+    {showOrderDetails && selectedOrder && (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-2xl bg-white">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-2xl font-bold text-gray-900">Order Details</h3>
+            <button
+              onClick={() => setShowOrderDetails(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <div className="space-y-6">
+            {/* Order Header */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Order Information</h4>
+                <p className="text-sm text-gray-600">Order ID: #{selectedOrder._id}</p>
+                <p className="text-sm text-gray-600">Date: {new Date(selectedOrder.date || selectedOrder.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-600">Status: 
+                  <span className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(selectedOrder.status)}`}>
+                    {selectedOrder.status}
+                  </span>
+                </p>
+                <p className="text-sm text-gray-600">Payment: {selectedOrder.payment}</p>
+                {selectedOrder.paymentIntentId && (
+                  <p className="text-sm text-gray-600">Payment ID: {selectedOrder.paymentIntentId}</p>
+                )}
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Customer Information</h4>
+                <div className="flex items-center mb-1">
+                  <UserIcon className="w-4 h-4 mr-2 text-gray-500" />
+                  <p className="text-sm text-gray-600">{selectedOrder.customer}</p>
+                </div>
+                {selectedOrder.email && (
+                  <div className="flex items-center mb-1">
+                    <Mail className="w-4 h-4 mr-2 text-gray-500" />
+                    <p className="text-sm text-gray-600">{selectedOrder.email}</p>
+                  </div>
+                )}
+                {selectedOrder.phoneNumber && (
+                  <div className="flex items-center mb-1">
+                    <Phone className="w-4 h-4 mr-2 text-gray-500" />
+                    <p className="text-sm text-gray-600">{selectedOrder.phoneNumber}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            {selectedOrder.shippingAddress && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+                  <h4 className="font-semibold text-gray-900">Shipping Address</h4>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>{selectedOrder.shippingAddress.street}</p>
+                  <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.postalCode}</p>
+                  <p>{selectedOrder.shippingAddress.country}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Order Items */}
+            <div className="p-4 bg-green-50 rounded-lg">
+              <div className="flex items-center mb-3">
+                <Package className="w-5 h-5 mr-2 text-green-600" />
+                <h4 className="font-semibold text-gray-900">Order Items</h4>
+              </div>
+              {selectedOrder.products && selectedOrder.products.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedOrder.products.map((product, index) => (
+                    <div key={index} className="flex justify-between items-center py-2 border-b border-green-200 last:border-b-0">
+                      <div>
+                        <p className="font-medium text-gray-900">{product.name}</p>
+                        <p className="text-sm text-gray-600">
+                          Size: {product.size || 'N/A'} | Color: {product.color || 'N/A'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-gray-900">₹{product.price}</p>
+                        <p className="text-sm text-gray-600">Qty: {product.quantity}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600">No product details available</p>
+              )}
+            </div>
+
+            {/* Order Total */}
+            <div className="p-4 bg-yellow-50 rounded-lg">
+              <div className="flex justify-between items-center">
+                <h4 className="font-semibold text-gray-900">Total Amount</h4>
+                <p className="text-2xl font-bold text-gray-900">₹{selectedOrder.amount.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3 pt-4">
+              <button
+                onClick={() => setEditingStatus(selectedOrder._id)}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Update Status
+              </button>
+              <button
+                onClick={() => setShowOrderDetails(false)}
+                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  
 };
 
 export default Orders;

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import api from '../../services/api';
+import { productAPI } from "../../services/api";
 import {
   Search,
   Plus,
@@ -32,7 +32,7 @@ const Products = ({
   // API: Add Product
   const handleAddProduct = async (productData) => {
     try {
-      await api.post('/products', productData);
+      await productAPI.addProduct(productData);
       setShowAddForm(false);
       window.location.reload(); // Or refetch products in parent
     } catch (err) {
@@ -43,7 +43,7 @@ const Products = ({
   // API: Edit Product
   const handleEditProduct = async (id, productData) => {
     try {
-      await api.put(`/products/${id}`, productData);
+      await productAPI.updateProduct(id, productData);
       window.location.reload();
     } catch (err) {
       alert('Failed to update product');
@@ -54,7 +54,7 @@ const Products = ({
   const handleDeleteProduct = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
-      await api.delete(`/products/${id}`);
+      await productAPI.deleteProduct(id);
       window.location.reload();
     } catch (err) {
       alert('Failed to delete product');
@@ -198,9 +198,9 @@ const Products = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center">
-                        {product.image ? (
+                        {product.photos && product.photos[0] ? (
                           <img
-                            src={product.image}
+                            src={product.photos[0]}
                             alt={product.name}
                             className="h-full w-full object-cover rounded-md"
                           />
@@ -345,12 +345,10 @@ const Products = ({
 
       {/* Add Product Modal */}
       {showAddForm && (
-      
-            <AddProduct
-              onAdd={handleAddProduct}
-              onClose={() => setShowAddForm(false)}
-            />
-         
+        <AddProduct
+          onAdd={handleAddProduct}
+          onClose={() => setShowAddForm(false)}
+        />
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import api from '../../services/api';
+import { productAPI } from "../../services/api";
 import { Search, Plus, Eye, Edit, Trash2, User, ChevronUp, ChevronDown } from "lucide-react";
 
 const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor, getRoleColor }) => {

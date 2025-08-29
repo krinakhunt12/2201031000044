@@ -1,68 +1,114 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../../components/Users/Navbar";
 import Footer from "../../components/Users/Footer";
-import menProducts from "../../constants/menCollection";
 import ProductCard from "../../components/Users/ProductCard";
+import { productAPI } from "../../services/api";
 
-
-const CategoryCard = ({ category, image, productCount, path }) => (
+const CategoryCard = ({ category, image, productCount, path, icon }) => (
   <Link to={path} className="group">
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="relative h-48 overflow-hidden">
+    <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
+      <div className="relative h-56 overflow-hidden">
         <img
           src={image}
           alt={category}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-      </div>
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">{category}</h3>
-        <p className="text-sm text-gray-600">{productCount} items</p>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="flex items-center mb-2">
+            <span className="text-2xl mr-2">{icon}</span>
+            <h3 className="text-xl font-bold text-white">{category}</h3>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-white/90 text-sm">{productCount} items</p>
+            <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </Link>
 );
 
 const MenCategory = () => {
-  // Clothing categories only
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await productAPI.getProductsByCategory('men');
+        if (response.success) {
+          setProducts(response.products);
+        } else {
+          setError("Failed to fetch products");
+        }
+      } catch (err) {
+        setError("Error fetching products");
+        console.error("Error fetching products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Group products by type to get counts
+  const getProductCountByType = (productType) => {
+    return products.filter(product => product.productType === productType).length;
+  };
+
+  // Men-specific clothing categories (no duplicates)
   const clothingCategories = [
     {
       name: "T-Shirts",
       path: "/category/men/tshirts",
       image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80",
-      productCount: menProducts["T-Shirts"]?.length || 0
+      productCount: getProductCountByType("T-Shirts"),
+      icon: "👕"
     },
     {
       name: "Shirts",
       path: "/category/men/shirts",
       image: "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=800&q=80",
-      productCount: menProducts["Shirts"]?.length || 0
+      productCount: getProductCountByType("Shirts"),
+      icon: "👔"
     },
     {
       name: "Jackets",
       path: "/category/men/jackets",
       image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80",
-      productCount: 8
+      productCount: getProductCountByType("Jackets"),
+      icon: "🧥"
     },
     {
       name: "Jeans",
       path: "/category/men/jeans",
       image: "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=800&q=80",
-      productCount: menProducts["Jeans"]?.length || 0
+      productCount: getProductCountByType("Jeans"),
+      icon: "👖"
     },
     {
       name: "Shorts",
       path: "/category/men/shorts",
       image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=800&q=80",
-      productCount: 6
+      productCount: getProductCountByType("Shorts"),
+      icon: "🩳"
     },
     {
       name: "Sweaters",
       path: "/category/men/sweaters",
       image: "https://images.unsplash.com/photo-1434389677669-e08b5c808b32?auto=format&fit=crop&w=800&q=80",
-      productCount: 7
+      productCount: getProductCountByType("Sweaters"),
+      icon: "🧶"
     }
   ];
 
@@ -94,10 +140,12 @@ const MenCategory = () => {
     }
   ];
 
-  // Popular items from all categories
-  const popularItems = Object.values(menProducts)
-    .flat()
-    .sort((a, b) => b.rating - a.rating)
+  // Popular items from all categories - remove duplicates by ID
+  const popularItems = products
+    .filter((product, index, self) => 
+      index === self.findIndex(p => p._id === product._id)
+    )
+    .sort((a, b) => (b.rating || 4.5) - (a.rating || 4.5))
     .slice(0, 8);
 
   return (
@@ -160,11 +208,26 @@ const MenCategory = () => {
             <h2 className="text-3xl font-bold text-gray-900">Popular Items</h2>
             <button className="text-gray-600 hover:text-black font-medium">View All</button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {popularItems.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading products...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-600">{error}</p>
+            </div>
+          ) : popularItems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {popularItems.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No products found</p>
+            </div>
+          )}
         </section>
 
         {/* Newsletter */}
