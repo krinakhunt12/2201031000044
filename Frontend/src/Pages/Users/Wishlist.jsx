@@ -7,19 +7,21 @@ import { addToCart } from '../../features/cart/cartSlice';
 import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/Users/Navbar';
 import Footer from '../../components/Users/Footer';
+import { useAuth } from '../../hooks/useAuth';
 
 const Wishlist = () => {
   const dispatch = useAppDispatch();
   const { items: wishlistItems } = useAppSelector(state => state.wishlist);
   const { showSuccess, showError } = useToast();
-  const { isAuthenticated } = require('../../hooks/useAuth').useAuth();
+  const { isAuthenticated } = useAuth();
 
   const handleRemoveFromWishlist = (item) => {
     if (!isAuthenticated) {
       showError('Please log in to your account.');
       return;
     }
-    dispatch(removeFromWishlist({ id: item.id }));
+    const id = item.id || item._id || item.productId || item.productId?._id;
+    dispatch(removeFromWishlist({ id }));
     showSuccess('Item removed from wishlist');
   };
 
@@ -28,13 +30,18 @@ const Wishlist = () => {
       showError('Please log in to your account.');
       return;
     }
+    const id = item.id || item._id || item.productId || item.productId?._id;
+    const image = item.image || item.photos?.[0] || item.photos?.[0]?.filePath || '';
+
     dispatch(addToCart({
       ...item,
+      id,
+      image,
       quantity: 1,
-      selectedSize: item.sizes?.[0] || 'M',
+      selectedSize: item.sizes?.[0] || item.size || 'M',
       selectedColor: item.colors?.[0] || 'Default'
     }));
-    dispatch(moveToCart({ id: item.id }));
+    dispatch(moveToCart({ id }));
     showSuccess('Item moved to cart');
   };
 
@@ -94,12 +101,18 @@ const Wishlist = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {wishlistItems.map((item) => (
-              <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+            {wishlistItems.map((item) => {
+              const keyId = item.id || item._id || item.productId || item.productId?._id;
+              const imageSrc = item.image || item.photos?.[0] || item.photos?.[0]?.filePath || '';
+              const displaySrc = imageSrc
+                ? (imageSrc.startsWith('http') ? imageSrc : `${window.location.origin}${imageSrc.startsWith('/') ? '' : '/'}${imageSrc}`)
+                : '';
+              return (
+              <div key={keyId} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                 {/* Product Image */}
                 <div className="relative aspect-square overflow-hidden">
                   <img
-                    src={item.image}
+                    src={displaySrc}
                     alt={item.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
@@ -163,7 +176,8 @@ const Wishlist = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </main>

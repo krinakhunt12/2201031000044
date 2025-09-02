@@ -2,21 +2,13 @@ const express = require('express');
 const router = express.Router();
 const {
     createPaymentIntent,
-    confirmPayment,
-    handleWebhook,
-    getPaymentStatus
+    verifyRazorpayPayment
 } = require('../controllers/paymentController');
 
-// Create payment intent
+// Create Razorpay order
 router.post('/create-payment-intent', createPaymentIntent);
 
-// Confirm payment
-router.post('/confirm-payment', confirmPayment);
-
-// Stripe webhook (must be before express.json() middleware)
-router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
-
-// Get payment status
-router.get('/status/:paymentIntentId', getPaymentStatus);
+// Verify Razorpay payment (signature verification from client)
+router.post('/verify-razorpay', express.json(), verifyRazorpayPayment);
 
 module.exports = router;

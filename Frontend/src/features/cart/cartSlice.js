@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { readStorage, writeStorage } from '../../utils/storage';
 
 // Async thunk for fetching user's cart from API
 export const fetchUserCart = createAsyncThunk(
@@ -15,17 +16,7 @@ export const fetchUserCart = createAsyncThunk(
 const cartSlice = createSlice({
     name: 'cart',
     initialState: (() => {
-        const user = JSON.parse(localStorage.getItem('user'));
-        let items = [];
-        if (user && user.emailOrPhone) {
-            const cartKey = `cart_${user.emailOrPhone}`;
-            const savedCart = localStorage.getItem(cartKey);
-            if (savedCart) {
-                try {
-                    items = JSON.parse(savedCart);
-                } catch {}
-            }
-        }
+        const items = readStorage('cart') || [];
         return {
             items,
             totalQuantity: items.reduce((total, item) => total + item.quantity, 0),
@@ -55,7 +46,7 @@ const cartSlice = createSlice({
             state.totalQuantity = state.items.reduce((total, item) => total + item.quantity, 0);
             state.totalAmount = state.items.reduce((total, item) => total + item.totalPrice, 0);
             // Persist cart to localStorage
-            localStorage.setItem('cart', JSON.stringify(state.items));
+            writeStorage('cart', state.items);
         },
 
         removeFromCart: (state, action) => {
@@ -66,7 +57,7 @@ const cartSlice = createSlice({
             state.totalQuantity = state.items.reduce((total, item) => total + item.quantity, 0);
             state.totalAmount = state.items.reduce((total, item) => total + item.totalPrice, 0);
             // Persist cart to localStorage
-            localStorage.setItem('cart', JSON.stringify(state.items));
+            writeStorage('cart', state.items);
         },
 
         updateQuantity: (state, action) => {
@@ -89,7 +80,7 @@ const cartSlice = createSlice({
             state.totalQuantity = state.items.reduce((total, item) => total + item.quantity, 0);
             state.totalAmount = state.items.reduce((total, item) => total + item.totalPrice, 0);
             // Persist cart to localStorage
-            localStorage.setItem('cart', JSON.stringify(state.items));
+            writeStorage('cart', state.items);
         },
 
         clearCart: (state) => {
@@ -97,7 +88,7 @@ const cartSlice = createSlice({
             state.totalQuantity = 0;
             state.totalAmount = 0;
             // Persist cart to localStorage
-            localStorage.setItem('cart', JSON.stringify(state.items));
+            writeStorage('cart', state.items);
         },
 
         setSelectedSize: (state, action) => {

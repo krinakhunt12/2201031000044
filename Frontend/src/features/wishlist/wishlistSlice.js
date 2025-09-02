@@ -1,19 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { readStorage, writeStorage } from '../../utils/storage';
 
 const wishlistSlice = createSlice({
     name: 'wishlist',
     initialState: (() => {
-        const user = JSON.parse(localStorage.getItem('user'));
-        let items = [];
-        if (user && user.emailOrPhone) {
-            const wishlistKey = `wishlist_${user.emailOrPhone}`;
-            const savedWishlist = localStorage.getItem(wishlistKey);
-            if (savedWishlist) {
-                try {
-                    items = JSON.parse(savedWishlist);
-                } catch {}
-            }
-        }
+        const items = readStorage('wishlist') || [];
         return { items };
     })(),
     reducers: {
@@ -27,36 +18,24 @@ const wishlistSlice = createSlice({
                 });
             }
             // Persist wishlist to localStorage
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (user && user.id) {
-                localStorage.setItem(`wishlist_${user.id}`, JSON.stringify(state.items));
-            }
+            writeStorage('wishlist', state.items);
         },
         removeFromWishlist: (state, action) => {
             const { id } = action.payload;
             state.items = state.items.filter(item => item.id !== id);
             // Persist wishlist to localStorage
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (user && user.id) {
-                localStorage.setItem(`wishlist_${user.id}`, JSON.stringify(state.items));
-            }
+            writeStorage('wishlist', state.items);
         },
         moveToCart: (state, action) => {
             const { id } = action.payload;
             state.items = state.items.filter(item => item.id !== id);
             // Persist wishlist to localStorage
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (user && user.id) {
-                localStorage.setItem(`wishlist_${user.id}`, JSON.stringify(state.items));
-            }
+            writeStorage('wishlist', state.items);
         },
         clearWishlist: (state) => {
             state.items = [];
             // Persist wishlist to localStorage
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (user && user.id) {
-                localStorage.setItem(`wishlist_${user.id}`, JSON.stringify(state.items));
-            }
+            writeStorage('wishlist', state.items);
         },
     },
 });

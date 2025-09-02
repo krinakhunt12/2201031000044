@@ -56,6 +56,25 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // If product has a single size value, add directly to cart; otherwise open quick view
+    const sizeValue = product.size || (product.sizes && product.sizes.length === 1 && product.sizes[0]);
+    const itemId = product._id || product.id || Math.random().toString(36).slice(2,9);
+    if (sizeValue) {
+      const price = product.price || product.salePrice || 0;
+      dispatch(addToCart({
+        id: itemId,
+        _id: product._id,
+        name: product.name,
+        price,
+        photos: product.photos || [],
+        image: product.image || product.photos?.[0] || null,
+        selectedSize: sizeValue,
+        quantity: 1,
+        totalPrice: price * 1,
+      }));
+      showSuccess('Added to cart');
+      return;
+    }
     setShowQuickView(true);
   };
 

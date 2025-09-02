@@ -1,155 +1,94 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 const Order = require('../models/Order');
 
-// Create payment intent
+// Stripe removed — use Razorpay for payments
+
+// Initialize Razorpay instance when keys present
+let razorpayInstance = null;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    try {
+        razorpayInstance = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET
+        });
+    } catch (err) {
+        console.warn('Failed to initialize Razorpay:', err.message);
+        razorpayInstance = null;
+    }
+} else {
+    console.warn('RAZORPAY keys not set; Razorpay features are disabled.');
+}
+
+// Create Razorpay order
 exports.createPaymentIntent = async(req, res) => {
     try {
-        const { amount, currency = 'inr', orderId, items } = req.body;
+        const { amount, currency = 'INR', orderId, items } = req.body;
 
-        // Validate amount (minimum 50 INR for Stripe)
-        if (amount < 50) {
-            return res.status(400).json({
-                success: false,
-                message: 'Amount must be at least ₹50'
-            });
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid amount' });
         }
 
-        // Create payment intent
-        // const paymentIntent = await stripe.paymentIntents.create({
-        //     amount: Math.round(amount * 100), // Convert to paise (smallest currency unit)
-        //     currency: currency,
-        //     metadata: {
-        //         orderId: orderId || 'temp',
-        //         items: JSON.stringify(items ? .slice(0, 5) || []) // Limit metadata size
-        //     },
-        //     automatic_payment_methods: {
-        //         enabled: true,
-        //     },
-        // });
+        // Convert to paise
+        const paise = Math.round(amount * 100);
 
-        res.status(200).json({
-            success: true,
-            clientSecret: paymentIntent.client_secret,
-            paymentIntentId: paymentIntent.id
-        });
+        if (!razorpayInstance) {
+            return res.status(500).json({ success: false, message: 'Razorpay not configured on server' });
+        }
+
+        const options = {
+            amount: paise,
+            currency: (currency || 'INR').toUpperCase(),
+            receipt: orderId || `rcpt_${Date.now()}`,
+            payment_capture: 1,
+        };
+
+        const razorpayOrder = await razorpayInstance.orders.create(options);
+        return res.status(200).json({ success: true, razorpayOrder });
 
     } catch (error) {
-        console.error('Payment intent creation failed:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Payment initialization failed'
-        });
+        console.error('Razorpay order creation failed:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to create Razorpay order' });
     }
 };
 
-// Confirm payment and update order
-exports.confirmPayment = async(req, res) => {
+// (Stripe removed) confirmPayment endpoint is not supported when Stripe is disabled.
+
+// Stripe webhooks removed — use Razorpay verification from client-side.
+
+// Stripe status endpoint removed.
+
+// Verify Razorpay payment signature sent from client
+exports.verifyRazorpayPayment = async(req, res) => {
     try {
-        const { paymentIntentId, orderId } = req.body;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
 
-        // Retrieve payment intent from Stripe
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        if (!razorpayInstance) {
+            return res.status(500).json({ success: false, message: 'Razorpay not configured' });
+        }
 
-        if (paymentIntent.status === 'succeeded') {
-            // Update order status if orderId exists
+        const generated_signature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .update(razorpay_order_id + '|' + razorpay_payment_id)
+            .digest('hex');
+
+        if (generated_signature === razorpay_signature) {
+            // Update order status if orderId provided
             if (orderId) {
                 await Order.findByIdAndUpdate(orderId, {
                     status: 'Paid',
-                    paymentIntentId: paymentIntentId,
+                    paymentProvider: 'razorpay',
+                    paymentIntentId: razorpay_payment_id,
                     paymentStatus: 'completed'
                 });
             }
 
-            res.status(200).json({
-                success: true,
-                message: 'Payment confirmed successfully',
-                paymentStatus: paymentIntent.status
-            });
+            return res.status(200).json({ success: true, message: 'Payment verified' });
         } else {
-            res.status(400).json({
-                success: false,
-                message: 'Payment not completed',
-                paymentStatus: paymentIntent.status
-            });
+            return res.status(400).json({ success: false, message: 'Invalid signature' });
         }
 
-    } catch (error) {
-        console.error('Payment confirmation failed:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Payment confirmation failed'
-        });
-    }
-};
-
-// Webhook to handle Stripe events
-exports.handleWebhook = async(req, res) => {
-    const sig = req.headers['stripe-signature'];
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-    let event;
-
-    try {
-        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
     } catch (err) {
-        console.error('Webhook signature verification failed:', err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    // Handle the event
-    switch (event.type) {
-        case 'payment_intent.succeeded':
-            const paymentIntent = event.data.object;
-            console.log('Payment succeeded:', paymentIntent.id);
-
-            // Update order in database
-            if (paymentIntent.metadata.orderId) {
-                await Order.findByIdAndUpdate(paymentIntent.metadata.orderId, {
-                    status: 'Paid',
-                    paymentIntentId: paymentIntent.id,
-                    paymentStatus: 'completed'
-                });
-            }
-            break;
-
-        case 'payment_intent.payment_failed':
-            const failedPayment = event.data.object;
-            console.log('Payment failed:', failedPayment.id);
-
-            if (failedPayment.metadata.orderId) {
-                await Order.findByIdAndUpdate(failedPayment.metadata.orderId, {
-                    status: 'Payment Failed',
-                    paymentStatus: 'failed'
-                });
-            }
-            break;
-
-        default:
-            console.log(`Unhandled event type ${event.type}`);
-    }
-
-    res.json({ received: true });
-};
-
-// Get payment status
-exports.getPaymentStatus = async(req, res) => {
-    try {
-        const { paymentIntentId } = req.params;
-
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-        res.status(200).json({
-            success: true,
-            status: paymentIntent.status,
-            amount: paymentIntent.amount / 100, // Convert back to rupees
-            currency: paymentIntent.currency
-        });
-
-    } catch (error) {
-        console.error('Failed to get payment status:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to get payment status'
-        });
+        console.error('Razorpay verification failed:', err.message);
+        return res.status(500).json({ success: false, message: 'Verification failed' });
     }
 };
