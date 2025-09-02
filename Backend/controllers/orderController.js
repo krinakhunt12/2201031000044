@@ -123,3 +123,39 @@ exports.deleteOrder = async(req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// Get orders for a specific user identifier (email, customer name, or phone)
+exports.getOrdersByUser = async (req, res) => {
+    try {
+        const { identifier } = req.params;
+        if (!identifier) return res.status(400).json({ success: false, message: 'Identifier required' });
+
+        // Match by email, customer (case-insensitive), or phoneNumber
+        const orders = await Order.find({
+            $or: [
+                { email: identifier },
+                { customer: { $regex: new RegExp(`^${identifier}$`, 'i') } },
+                { phoneNumber: identifier }
+            ]
+        }).populate('products.productId', 'name price category').sort({ createdAt: -1 });
+
+        const transformedOrders = orders.map(order => ({
+            _id: order._id,
+            customer: order.customer,
+            email: order.email || 'No email provided',
+            amount: order.amount,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            payment: order.payment,
+            date: order.createdAt,
+            shippingAddress: order.shippingAddress,
+            products: order.products,
+            paymentIntentId: order.paymentIntentId
+        }));
+
+        res.status(200).json({ success: true, orders: transformedOrders, count: transformedOrders.length });
+    } catch (error) {
+        console.error('Error fetching user orders:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

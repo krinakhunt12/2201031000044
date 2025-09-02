@@ -8,6 +8,9 @@ router.post('/', createOrder);
 // Get all orders
 router.get('/', getOrders);
 
+// Get orders for a specific user (by email, customer name, or phone)
+router.get('/user/:identifier', getOrdersByUser);
+
 // Get single order by ID
 router.get('/:id', getOrderById);
 

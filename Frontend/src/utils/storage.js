@@ -4,8 +4,8 @@ export function getStorageKey(base) {
         if (!raw) return base;
         const user = JSON.parse(raw);
         // prefer emailOrPhone if present, otherwise fallback to id
-        const identifier = user ? .emailOrPhone ? ? user ? .id;
-        return identifier ? `${base}_${identifier}` : base;
+    const identifier = user?.emailOrPhone ?? user?.id;
+    return identifier ? `${base}_${identifier}` : base;
     } catch (err) {
         return base;
     }

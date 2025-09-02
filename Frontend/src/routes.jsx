@@ -1,8 +1,7 @@
 // src/routes.jsx
 
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from './contexts/authContext';
+import { Routes, Route } from "react-router-dom";
 
 // Import your page components
 import Home from "./Pages/Users/Home"
@@ -55,9 +54,7 @@ import AdminLogin from "./Pages/Admin/AdminLogin";
 
 const AppRoutes = () => {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
+      <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/about" element={<About />} />
@@ -113,8 +110,6 @@ const AppRoutes = () => {
           {/* Catch-all route for 404 */}
           {/* <Route path="*" element={<NotFound />} /> */}
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
   );
 };
 

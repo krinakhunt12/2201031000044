@@ -7,16 +7,18 @@ import { store } from './store/index.js'
 import { ToastProvider } from './contexts/ToastContext'
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from './contexts/authContext.jsx';
+import { BrowserRouter } from 'react-router-dom';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-   
-        <Provider store={store}>
+    <Provider store={store}>
       <ToastProvider>
-        <App />
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </BrowserRouter>
       </ToastProvider>
     </Provider>
-     
-    
   </StrictMode>,
 )
