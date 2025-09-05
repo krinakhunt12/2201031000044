@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion } from 'framer-motion';
 import {
   ShoppingBag,
   Search,
@@ -236,7 +237,12 @@ const Navbar = () => {
   };
 
   return (
-    <header className="font-poppins fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+    <motion.header
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+      className="font-poppins fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm"
+    >
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link
@@ -511,7 +517,7 @@ const Navbar = () => {
       </div>
       
   {/* Removed modal-based Login/SignUp rendering. Use <Route path="/login" element={<Login />} /> and <Route path="/signup" element={<SignUp />} /> in your router. */}
-    </header>
+  </motion.header>
   );
 };
 

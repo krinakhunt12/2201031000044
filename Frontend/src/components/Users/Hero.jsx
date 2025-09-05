@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ArrowRight } from "lucide-react";
+import { motion } from 'framer-motion';
 
 // Using Unsplash image URLs directly
 const heroSlides = [
@@ -84,33 +85,35 @@ const Hero = () => {
       <div className="absolute inset-0">{bubbles}</div>
 
       {/* Slide Content */}
-      <div
+      <motion.div
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
         className={`relative z-10 text-center max-w-4xl mx-auto px-4 transform transition-all duration-${TRANSITION_DURATION} ${
           isLoaded ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
         }`}
       >
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white drop-shadow-lg">
+        <motion.h1 whileInView={{ y: [10, 0], opacity: [0, 1] }} transition={{ duration: 0.6 }} className="text-5xl md:text-7xl font-bold mb-6 text-white drop-shadow-lg">
           {currentSlideData.title}
-        </h1>
-        <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto drop-shadow">
+        </motion.h1>
+        <motion.p whileInView={{ opacity: [0, 1], y: [6, 0] }} transition={{ duration: 0.6, delay: 0.1 }} className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto drop-shadow">
           {currentSlideData.subtitle}
-        </p>
+        </motion.p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
             aria-label="Shop Collection"
             className="group px-8 py-4 bg-white text-gray-900 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 shadow-lg"
           >
             <span>Shop Collection</span>
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <button
-            aria-label="Watch Lookbook"
-            className="px-8 py-4 border-2 border-white/50 text-white rounded-full font-semibold hover:bg-white/10 backdrop-blur-sm transition-all duration-300"
-          >
+          </motion.button>
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} aria-label="Watch Lookbook" className="px-8 py-4 border-2 border-white/50 text-white rounded-full font-semibold hover:bg-white/10 backdrop-blur-sm transition-all duration-300">
             Watch Lookbook
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Slide Indicators */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2">

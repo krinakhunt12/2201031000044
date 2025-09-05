@@ -76,7 +76,7 @@ const collections = [
 const Collections = () => {
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
-  const [sortBy, setSortBy] = useState('featured');
+  const [sortBy, setSortBy] = useState('featured'); // This line remains unchanged
   const [showFilters, setShowFilters] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState({});
   const [products, setProducts] = useState([]);
@@ -214,7 +214,7 @@ const Collections = () => {
             <span className="text-xs bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
               {collection.itemCount} items
             </span>
-            <button className="text-white hover:text-blue-200 transition-colors">
+                        <button className="text-white hover:text-blue-200 transition-colors cursor-pointer">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>

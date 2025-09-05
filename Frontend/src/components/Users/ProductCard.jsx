@@ -92,12 +92,20 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
           <img
             src={productImage}
             alt={product.name}
-            className="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-60 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
             onError={(e) => {
               if (e.currentTarget.dataset.hasError) return;
               e.currentTarget.dataset.hasError = 'true';
               e.currentTarget.onerror = null;
-              e.currentTarget.src = 'https://via.placeholder.com/400x500?text=No+Image';
+              // fallback: if productType contains 'T' or 'Kurti' prefer themed image
+              const pt = product.productType || product.type || '';
+              if (/t-?shirts?|tshirts?/i.test(pt)) {
+                e.currentTarget.src = 'https://source.unsplash.com/400x500/?tshirt';
+              } else if (/kurti/i.test(pt)) {
+                e.currentTarget.src = 'https://source.unsplash.com/400x500/?kurti';
+              } else {
+                e.currentTarget.src = 'https://via.placeholder.com/400x500?text=No+Image';
+              }
             }}
           />
         </Link>
@@ -113,7 +121,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={handleWishlistToggle}
-          className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+          className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors cursor-pointer"
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           {isWishlisted ? (
@@ -127,7 +135,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
         <motion.button
           initial={{ opacity: 0, y: 10 }}
           whileHover={{ opacity: 1, y: 0 }}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap hover:bg-gray-800 transition-colors"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap hover:bg-gray-800 transition-colors cursor-pointer"
           onClick={(e)=>{ e.stopPropagation(); setShowQuickView(true); }}
         >
           Quick View
@@ -137,7 +145,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-800 line-clamp-1 hover:text-black transition-colors">
+            <h3 className="text-lg font-semibold text-gray-800 line-clamp-1 hover:text-black transition-colors cursor-pointer">
               {product.name}
             </h3>
           </div>
@@ -167,7 +175,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
             <span className="text-xs text-gray-500 block mb-1">Size:</span>
             <div className="flex space-x-1">
               {(Array.isArray(product.sizes) ? product.sizes : (product.size ? (Array.isArray(product.size) ? product.size : String(product.size).split(',').map(s=>s.trim()).filter(Boolean)) : [])).map((sz, idx) => (
-                <span key={idx} className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600">{sz}</span>
+                <span key={idx} className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600 cursor-pointer">{sz}</span>
               ))}
             </div>
           </div>
@@ -179,7 +187,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
             <span className="text-xs text-gray-500 block mb-1">Color:</span>
             <div className="flex space-x-1">
               {(Array.isArray(product.colors) ? product.colors : (product.color ? (Array.isArray(product.color) ? product.color : String(product.color).split(',').map(s=>s.trim()).filter(Boolean)) : [])).map((c, idx) => (
-                <span key={idx} className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600">{c}</span>
+                <span key={idx} className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600 cursor-pointer">{c}</span>
               ))}
             </div>
           </div>

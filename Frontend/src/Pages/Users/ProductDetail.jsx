@@ -10,6 +10,7 @@ import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/Users/Navbar';
 import Footer from '../../components/Users/Footer';
 import { searchProducts } from '../../services/searchService';
+import { API_BASE_API } from '../../config/api';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -31,7 +32,29 @@ const ProductDetail = () => {
     const loadProduct = async () => {
       setLoading(true);
       try {
-        // Search for the specific product
+        // Try fetching product list from backend and find by id
+        const res = await fetch(`${API_BASE_API}/products`);
+        if (res.ok) {
+          const json = await res.json();
+          const list = json.products || [];
+          const found = list.find(p => String(p._id) === String(id) || String(p.id) === String(id));
+          if (found) {
+            // normalize fields
+            const normalized = {
+              ...found,
+              name: found.name || found.title || `Product ${id}`,
+              sizes: found.size || found.sizes || [],
+              colors: found.color || found.colors || [],
+              images: found.images || found.photos || (found.image ? [found.image] : []),
+            };
+            setProduct(normalized);
+            setSelectedSize(normalized.sizes?.[0] || '');
+            setSelectedColor(normalized.colors?.[0] || '');
+            return;
+          }
+        }
+
+        // Fallback: try searchService (local constants) then demo fallback
         const results = await searchProducts(`id:${id}`, 1);
         if (results.length > 0) {
           const foundProduct = results[0];
@@ -39,9 +62,9 @@ const ProductDetail = () => {
           setSelectedSize(foundProduct.sizes?.[0] || '');
           setSelectedColor(foundProduct.colors?.[0] || '');
         } else {
-          // Fallback: create a mock product for demo
+          // Demo fallback
           setProduct({
-            id: parseInt(id),
+            id: id,
             name: `Product ${id}`,
             price: 1999,
             description: 'This is a premium quality product with excellent craftsmanship and modern design. Perfect for everyday wear and special occasions.',
@@ -177,7 +200,19 @@ const ProductDetail = () => {
                 <img
                   src={images[activeImage]}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover cursor-pointer"
+                  onError={(e)=>{
+                    if (e.currentTarget.dataset.hasError) return;
+                    e.currentTarget.dataset.hasError = 'true';
+                    const pt = product.productType || product.type || '';
+                    if (/t-?shirts?|tshirts?/i.test(pt)) {
+                      e.currentTarget.src = `https://source.unsplash.com/800x800/?tshirt&sig=${product._id || product.id}`;
+                    } else if (/kurti/i.test(pt)) {
+                      e.currentTarget.src = `https://source.unsplash.com/800x800/?kurti&sig=${product._id || product.id}`;
+                    } else {
+                      e.currentTarget.src = `https://source.unsplash.com/800x800/?fashion&sig=${product._id || product.id}`;
+                    }
+                  }}
                 />
               </div>
               
@@ -188,14 +223,15 @@ const ProductDetail = () => {
                     <button
                       key={index}
                       onClick={() => setActiveImage(index)}
-                      className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
+                      className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors cursor-pointer ${
                         activeImage === index ? 'border-black' : 'border-gray-200'
                       }`}
                     >
                       <img
                         src={image}
                         alt={`${product.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover cursor-pointer"
+                        onError={(e)=>{ if (!e.currentTarget.dataset.hasError) { e.currentTarget.dataset.hasError='true'; e.currentTarget.src=`https://source.unsplash.com/400x400/?fashion&sig=${index}` } }}
                       />
                     </button>
                   ))}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Clock, Gift, Zap, Tag, Star, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const PromoBanner = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -127,7 +128,7 @@ const PromoBanner = () => {
   return (
     <div className="w-full">
       {/* Main Banner Carousel */}
-      <div className="relative h-96 lg:h-[500px] overflow-hidden rounded-2xl mx-4 lg:mx-8 mb-8 shadow-2xl">
+  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="relative h-96 lg:h-[500px] overflow-hidden rounded-2xl mx-4 lg:mx-8 mb-8 shadow-2xl">
         {banners.map((banner, index) => (
           <div
             key={banner.id}
@@ -187,10 +188,10 @@ const PromoBanner = () => {
                     </div>
                   )}
 
-                  <button className="group bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center gap-2">
+                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="group bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center gap-2">
                     {banner.buttonText}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                  </button>
+                  </motion.button>
                 </div>
 
                 {/* Decorative Elements */}
@@ -238,7 +239,7 @@ const PromoBanner = () => {
             />
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Quick Promo Cards */}
       <div className="px-4 lg:px-8 mb-8">

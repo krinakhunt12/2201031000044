@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from 'framer-motion';
 import { Sparkles, Heart, Shield, Truck, Star } from "lucide-react";
 import Navbar from "../../components/Users/Navbar";
 import Footer from "../../components/Users/Footer";
@@ -34,27 +35,47 @@ const About = () => {
       <div className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="max-w-4xl mx-auto text-center mb-20">
-          <div className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 font-semibold uppercase tracking-wider text-sm px-4 py-2 rounded-full mb-6 shadow-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 font-semibold uppercase tracking-wider text-sm px-4 py-2 rounded-full mb-6 shadow-sm mx-auto"
+          >
             <Sparkles className="w-4 h-4" />
             Who We Are
-          </div>
-        
-               <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold mb-6 leading-tight text-gray-700">
-              About{" "}
-              <span className="bg-clip-text text-gray-500">
-                Stylon
-              </span>
-            </h1>
-          
-          <p className="text-gray-600 text-lg max-w-3xl mx-auto leading-relaxed italic">
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-semibold mb-6 leading-tight text-gray-700"
+          >
+            About {" "}
+            <span className="bg-clip-text text-gray-500">Stylon</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="text-gray-600 text-lg max-w-3xl mx-auto leading-relaxed italic"
+          >
             Empowering your style journey with fashion-forward collections, quality you can trust, and an experience you'll love.
-          </p>
+          </motion.p>
         </div>
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto">
           {/* Story Section */}
-          <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 sm:p-12 shadow-xl border border-white/20 mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6 }}
+            className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 sm:p-12 shadow-xl border border-white/20 mb-16"
+          >
             <div className="space-y-8 text-gray-700 text-lg leading-relaxed">
               <p className="text-xl font-medium text-gray-700">
                 <span className="font-bold  text-black bg-clip-text">Stylon</span> is your ultimate online destination for fashion-forward shopping. We're redefining how you shop online by offering a seamless experience, top-notch quality, and the latest in style trends — all in one place.
@@ -72,17 +93,32 @@ const About = () => {
                 We believe fashion should be accessible, expressive, and empowering. That's why thousands trust Stylon to deliver not just clothing, but confidence — right to their doorstep.
               </p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Features Grid */}
-          <div className="grid md:grid-cols-2 gap-6 mb-16">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={{
+              hidden: {},
+              show: { transition: { staggerChildren: 0.12 } }
+            }}
+            className="grid md:grid-cols-2 gap-6 mb-16"
+          >
             {features.map((feature, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="group bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/30 hover:shadow-xl hover:scale-105 transition-all duration-300"
+                variants={{
+                  hidden: { opacity: 0, y: 8 },
+                  show: { opacity: 1, y: 0 }
+                }}
+                whileHover={{ scale: 1.03 }}
+                transition={{ type: 'spring', stiffness: 200 }}
+                className="group bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/30"
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center text-gray-700 group-hover:scale-110 transition-transform duration-300">
+                  <div className="flex-shrink-0 w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center text-gray-700">
                     {feature.icon}
                   </div>
                   <div>
@@ -94,29 +130,40 @@ const About = () => {
                     </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* CTA Section */}
-          <div className="text-center bg-gradient-to-r from-gray-600 to-gray-400 rounded-3xl p-8 sm:p-12 text-white shadow-2xl">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.5 }}
+            className="text-center bg-gradient-to-r from-gray-600 to-gray-400 rounded-3xl p-8 sm:p-12 text-white shadow-2xl"
+          >
             <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Style?</h2>
             <p className="text-purple-100 text-lg mb-6 max-w-2xl mx-auto">
               Join thousands of fashion lovers who trust Stylon for their style needs. Your perfect outfit is just a click away.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button className="bg-white text-gray-600 font-semibold px-8 py-3 rounded-full hover:bg-gray-50 transition-colors duration-300 shadow-lg">
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="bg-white text-gray-600 font-semibold px-8 py-3 rounded-full hover:bg-gray-50 transition-colors duration-300 shadow-lg"
+              >
                 Start Shopping
-              </button>
-              <a 
-                href="/contact" 
+              </motion.button>
+              <motion.a
+                whileHover={{ y: -2 }}
+                href="/contact"
                 className="text-white font-medium hover:text-purple-100 transition-colors duration-300 flex items-center gap-2"
               >
                 <Heart className="w-4 h-4" />
                 Contact Our Team
-              </a>
+              </motion.a>
             </div>
-          </div>
+          </motion.div>
 
           {/* Contact Section */}
           <div className="mt-12 text-center">
