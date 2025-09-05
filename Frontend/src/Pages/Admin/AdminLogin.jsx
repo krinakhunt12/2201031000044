@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../../config/api';
 import { Eye, EyeOff, Shield, User, Lock, Mail } from 'lucide-react';
 
 const AdminLogin = () => {
@@ -18,7 +19,7 @@ const AdminLogin = () => {
 
   try {
     const res = await fetch(
-      `http://localhost:5000/admin/login`,
+      `${API_BASE}/admin/login`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

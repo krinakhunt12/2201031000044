@@ -1,7 +1,7 @@
 const Product = require('../models/Product');
 
 // Define allowed values
-const VALID_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const VALID_SIZES = ["XXS", "XS", "S", "M", "L", "XL", "2XL", "3XL"];
 const VALID_STATUSES = ["Active", "Inactive"];
 
 // -------------------- GET ALL PRODUCTS --------------------
@@ -35,11 +35,19 @@ exports.addProduct = async(req, res) => {
             sales = 0
         } = req.body;
 
-        if (!name || !size || !price || !category || !productType || !color) {
+        // Normalize sizes and colors to arrays if single value provided
+        const sizesArray = Array.isArray(size) ? size : (size ? String(size).split(',').map(s => s.trim()).filter(Boolean) : []);
+        const colorsArray = Array.isArray(color) ? color : (color ? String(color).split(',').map(c => c.trim()).filter(Boolean) : []);
+
+        if (!name || !sizesArray.length || !price || !category || !productType || !colorsArray.length) {
             return res.status(400).json({ success: false, message: "Missing required fields." });
         }
-        if (!VALID_SIZES.includes(size)) {
-            return res.status(400).json({ success: false, message: "Invalid size value." });
+
+        // Validate sizes
+        for (const s of sizesArray) {
+            if (!VALID_SIZES.includes(s)) {
+                return res.status(400).json({ success: false, message: `Invalid size value: ${s}` });
+            }
         }
         if (!VALID_STATUSES.includes(status)) {
             return res.status(400).json({ success: false, message: "Invalid status value." });
@@ -62,11 +70,11 @@ exports.addProduct = async(req, res) => {
 
         const product = new Product({
             name,
-            size,
+            size: sizesArray,
             price: parseFloat(price),
             category,
             productType,
-            color,
+            color: colorsArray,
             description,
             stock: parseInt(stock, 10),
             status,
@@ -162,10 +170,20 @@ exports.updateProduct = async(req, res) => {
             photos = req.files.map(file => ({ data: file.buffer, contentType: file.mimetype }));
         }
 
+        // Build updatedData from req.body and normalize
         const updatedData = {...req.body };
+        if (updatedData.size) {
+            const sizes = Array.isArray(updatedData.size) ? updatedData.size : String(updatedData.size).split(',').map(s => s.trim()).filter(Boolean);
+            for (const s of sizes) {
+                if (!VALID_SIZES.includes(s)) {
+                    return res.status(400).json({ success: false, message: `Invalid size value: ${s}` });
+                }
+            }
+            updatedData.size = sizes;
+        }
 
-        if (updatedData.size && !VALID_SIZES.includes(updatedData.size)) {
-            return res.status(400).json({ success: false, message: "Invalid size value." });
+        if (updatedData.color) {
+            updatedData.color = Array.isArray(updatedData.color) ? updatedData.color : String(updatedData.color).split(',').map(c => c.trim()).filter(Boolean);
         }
         if (updatedData.status && !VALID_STATUSES.includes(updatedData.status)) {
             return res.status(400).json({ success: false, message: "Invalid status value." });

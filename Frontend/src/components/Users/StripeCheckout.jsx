@@ -15,7 +15,7 @@ function loadRazorpayScript() {
   });
 }
 
-const CheckoutForm = ({ amount, orderId, onSuccess, onError, prefill = {} }) => {
+const CheckoutForm = ({ amount, orderId, createOrder, onSuccess, onError, prefill = {} }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,13 +33,25 @@ const CheckoutForm = ({ amount, orderId, onSuccess, onError, prefill = {} }) => 
     try {
       setIsLoading(true);
       await loadRazorpayScript();
+      // If no orderId was provided, ask parent to create one first
+      let activeOrderId = orderId;
+      if (!activeOrderId && typeof createOrder === 'function') {
+        try {
+          activeOrderId = await createOrder();
+        } catch (err) {
+          console.error('Failed to pre-create order:', err);
+          setError('Failed to create order before payment.');
+          setIsLoading(false);
+          return;
+        }
+      }
 
-      // Create order on backend
-          const apiBase = import.meta.env.VITE_API_URL || '';
-          const resp = await fetch(`${apiBase}/api/payments/create-payment-intent`, {
+      // Create razorpay order on backend
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const resp = await fetch(`${apiBase}/api/payments/create-payment-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, currency: 'INR', orderId })
+        body: JSON.stringify({ amount, currency: 'INR', orderId: activeOrderId })
       });
       const data = await resp.json();
       if (!data.success || !data.razorpayOrder) {
@@ -65,7 +77,13 @@ const CheckoutForm = ({ amount, orderId, onSuccess, onError, prefill = {} }) => 
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                orderId
+                orderId: activeOrderId,
+                amount: amount,
+                user: {
+                  name: prefill.name,
+                  email: prefill.email,
+                  phone: prefill.contact
+                }
               })
             });
 
@@ -128,9 +146,9 @@ const CheckoutForm = ({ amount, orderId, onSuccess, onError, prefill = {} }) => 
   );
 };
 
-const StripeCheckout = ({ amount, orderId, onSuccess, onError, prefill }) => {
+const StripeCheckout = ({ amount, orderId, createOrder, onSuccess, onError, prefill }) => {
   return (
-    <CheckoutForm amount={amount} orderId={orderId} onSuccess={onSuccess} onError={onError} prefill={prefill} />
+    <CheckoutForm amount={amount} orderId={orderId} createOrder={createOrder} onSuccess={onSuccess} onError={onError} prefill={prefill} />
   );
 };
 

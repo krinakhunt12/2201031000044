@@ -107,6 +107,7 @@ const AppRoutes = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+           <Route path="/profile" element={<Profile />} />
           {/* Catch-all route for 404 */}
           {/* <Route path="*" element={<NotFound />} /> */}
         </Routes>

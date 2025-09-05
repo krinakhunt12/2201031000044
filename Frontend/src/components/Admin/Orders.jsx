@@ -17,6 +17,8 @@ import {
   Calendar,
   User as UserIcon,
 } from "lucide-react";
+import ConfirmDialog from "../ui/ConfirmDialog";
+import { useToast } from '../../contexts/ToastContext';
 
 const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor }) => {
   // Sorting and pagination handled in parent (AdminDashboard)
@@ -24,6 +26,10 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [editingStatus, setEditingStatus] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTargetId, setConfirmTargetId] = useState(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const { showSuccess, showError } = useToast();
   const itemsPerPage = 5;
 
   // Sorting functionality
@@ -68,7 +74,7 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
     try {
       await orderAPI.updateOrderStatus(orderId, newStatus);
       setEditingStatus(null);
-      window.location.reload(); // Refresh the orders list
+  try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (error) {
       console.error('Error updating order status:', error);
       alert('Failed to update order status');
@@ -83,7 +89,7 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
     try {
       // This would require creating an addOrder API endpoint
       console.log('Add order functionality not implemented yet');
-      window.location.reload(); // Or refetch orders in parent
+  try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (err) {
       alert('Failed to add order');
     }
@@ -93,7 +99,7 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
   const handleEditOrder = async (id, orderData) => {
     try {
       await orderAPI.updateOrderStatus(id, orderData.status);
-      window.location.reload();
+  try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (err) {
       alert('Failed to update order');
     }
@@ -101,12 +107,26 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
 
   // API: Delete Order
   const handleDeleteOrder = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this order?')) return;
+    // Open confirm dialog
+    setConfirmTargetId(id);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmTargetId) return;
     try {
-      await orderAPI.deleteOrder(id);
-      window.location.reload();
+      setConfirmLoading(true);
+      await orderAPI.deleteOrder(confirmTargetId);
+  setConfirmOpen(false);
+  setConfirmTargetId(null);
+  showSuccess('Order deleted');
+  // notify admin UI to refresh stats/lists
+  try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (err) {
-      alert('Failed to delete order');
+      console.error('Failed to delete order', err);
+      showError('Failed to delete order');
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -183,114 +203,55 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
 
           <tbody className="bg-white divide-y divide-gray-200">
             {currentItems.length > 0 ? (
-              currentItems.map((order) => (
-                <tr key={order.id} className="hover:bg-blue-50 transition-colors duration-150">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{order.id || order._id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{order.customer}</div>
-                    <div className="text-xs text-gray-500">{order.email || 'No email'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ₹{order.amount.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {order.products && order.products.length > 0 
-                        ? order.products.map(p => p.name).join(', ')
-                        : order.items || 'Unknown items'
-                      }
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {order.products && order.products.length > 0 
-                        ? `${order.products.reduce((sum, p) => sum + p.quantity, 0)} items`
-                        : `${order.quantity || 1} items`
-                      }
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {order.payment === "Credit Card" && (
-                        <CreditCard className="w-4 h-4 mr-2 text-blue-500" />
-                      )}
-                      {order.payment === "Stripe" && (
-                        <CreditCard className="w-4 h-4 mr-2 text-blue-500" />
-                      )}
-                      {order.payment === "PayPal" && (
-                        <Shield className="w-4 h-4 mr-2 text-blue-500" />
-                      )}
-                      <span className="text-sm text-gray-700">{order.payment}</span>
-                    </div>
-                    {order.paymentStatus && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Payment: {order.paymentStatus}
+              currentItems.map((order) => {
+                const id = order._id || order.id || order.orderId;
+                return (
+                  <tr key={id} className="hover:bg-blue-50 transition-colors duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{order.customer}</div>
+                      <div className="text-xs text-gray-500">{order.email || 'No email'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹{Number(order.amount || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{order.products && order.products.length > 0 ? order.products.slice(0,3).map(p => p.name).join(', ') : order.items || 'Unknown items'}</div>
+                      <div className="text-xs text-gray-500">{order.products && order.products.length > 0 ? `${order.products.reduce((sum, p) => sum + (p.quantity||0), 0)} items` : `${order.quantity || 1} items`}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {order.payment === 'Razorpay' ? <CreditCard className="w-4 h-4 mr-2 text-green-500" /> : order.payment ? <CreditCard className="w-4 h-4 mr-2 text-blue-500" /> : null}
+                        <span className="text-sm text-gray-700">{order.payment || 'Unknown'}</span>
                       </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {editingStatus === order._id ? (
-                      <select
-                        className="text-xs border rounded px-2 py-1"
-                        defaultValue={order.status}
-                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                        onBlur={() => setEditingStatus(null)}
-                        autoFocus
-                      >
-                        {statusOptions.map(status => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full cursor-pointer ${getStatusColor(
-                          order.status
-                        )}`}
-                        onClick={() => setEditingStatus(order._id)}
-                        title="Click to edit status"
-                      >
-                        {order.status}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{order.date}</div>
-                    <div className="text-xs text-gray-500">{order.time}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
-                    <button
-                      className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow"
-                      title="View Details"
-                      onClick={() => handleViewOrder(order._id)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-100 transition-colors duration-200 shadow"
-                      title="Edit Status"
-                      onClick={() => setEditingStatus(order._id)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors duration-200 shadow"
-                      title="Delete Order"
-                      onClick={() => handleDeleteOrder(order._id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))
+                      {order.paymentStatus && <div className="text-xs text-gray-500 mt-1">Payment: {order.paymentStatus}</div>}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {editingStatus === id ? (
+                        <select className="text-xs border rounded px-2 py-1" defaultValue={order.status} onChange={(e) => handleStatusChange(id, e.target.value)} onBlur={() => setEditingStatus(null)} autoFocus>
+                          {statusOptions.map(status => <option key={status} value={status}>{status}</option>)}
+                        </select>
+                      ) : (
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full cursor-pointer ${getStatusColor(order.status)}`} onClick={() => setEditingStatus(id)} title="Click to edit status">{order.status}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{order.date || new Date(order.createdAt || '').toLocaleDateString()}</div>
+                      <div className="text-xs text-gray-500">{order.time || new Date(order.createdAt || '').toLocaleTimeString()}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
+                      <button className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow" title="View Details" onClick={() => handleViewOrder(id)}><Eye className="w-4 h-4" /></button>
+                      <button className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-100 transition-colors duration-200 shadow" title="Edit Status" onClick={() => setEditingStatus(id)}><Edit className="w-4 h-4" /></button>
+                      <button className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors duration-200 shadow" title="Delete Order" onClick={() => handleDeleteOrder(id)}><Trash2 className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan="8" className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center text-gray-500">
                     <CreditCard className="w-12 h-12 mb-4 text-gray-300" />
                     <p className="text-lg font-medium">No orders found</p>
-                    <p className="text-sm mt-1">
-                      Try adjusting your search or filter criteria
-                    </p>
+                    <p className="text-sm mt-1">Try adjusting your search or filter criteria</p>
                   </div>
                 </td>
               </tr>
@@ -346,7 +307,7 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
     </div>
   );
 
-    {showOrderDetails && selectedOrder && (
+  {showOrderDetails && selectedOrder && (
       <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-2xl bg-white">
           <div className="flex justify-between items-center mb-4">
@@ -470,6 +431,17 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
         </div>
       </div>
     )}
+    {/* Confirmation dialog for delete actions */}
+    <ConfirmDialog
+      open={confirmOpen}
+      title="Delete Order"
+      message="Are you sure you want to permanently delete this order? This action cannot be undone."
+      confirmLabel="Delete"
+      cancelLabel="Cancel"
+      loading={confirmLoading}
+      onConfirm={handleConfirmDelete}
+      onCancel={() => { setConfirmOpen(false); setConfirmTargetId(null); }}
+    />
   
 };
 

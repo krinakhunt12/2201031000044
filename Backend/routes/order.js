@@ -1,23 +1,41 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, getOrders, getOrderById, updateOrderStatus, deleteOrder } = require('../controllers/orderController');
+const orderController = require('../controllers/orderController');
 
-// Create new order
-router.post('/', createOrder);
+// helper to safely call controller methods
+function callController(fnName) {
+    return async(req, res, next) => {
+        try {
+            const fn = orderController && orderController[fnName];
+            if (typeof fn !== 'function') {
+                return res.status(501).json({ success: false, message: `Controller method ${fnName} not implemented` });
+            }
+            return await fn(req, res, next);
+        } catch (err) {
+            return next(err);
+        }
+    };
+}
 
-// Get all orders
-router.get('/', getOrders);
+// Create order
+router.post('/', callController('createOrder'));
 
-// Get orders for a specific user (by email, customer name, or phone)
-router.get('/user/:identifier', getOrdersByUser);
+// Admin / list (all orders or filtered by ?user=identifier)
+router.get('/', callController('getAllOrders'));
 
-// Get single order by ID
-router.get('/:id', getOrderById);
+// My orders (requires auth in future; falls back to query if implemented)
+router.get('/me', callController('getMyOrders'));
 
-// Update order status
-router.put('/:id/status', updateOrderStatus);
+// Get orders for a specific user identifier
+router.get('/user/:identifier', callController('getOrdersByUser'));
+
+// Get single order
+router.get('/:id', callController('getOrderById'));
+
+// Update order
+router.patch('/:id', callController('updateOrder'));
 
 // Delete order
-router.delete('/:id', deleteOrder);
+router.delete('/:id', callController('deleteOrder'));
 
 module.exports = router;

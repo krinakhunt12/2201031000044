@@ -38,11 +38,11 @@ const AdminDashboard = () => {
       setError(null);
       try {
         console.log('Fetching dashboard data...');
-        
+
         // Fetch products using productAPI
         const productsRes = await productAPI.getAllProducts();
         console.log('Products response:', productsRes);
-        
+
         // Fetch orders using orderAPI
         let ordersData = [];
         try {
@@ -149,7 +149,11 @@ const AdminDashboard = () => {
       }
       setLoading(false);
     };
+
     fetchData();
+    const onAdminUpdate = () => fetchData();
+    window.addEventListener('adminDataUpdated', onAdminUpdate);
+    return () => window.removeEventListener('adminDataUpdated', onAdminUpdate);
   }, []);
 
   const [notifications] = useState([

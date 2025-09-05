@@ -30,9 +30,25 @@ exports.createOrder = async(req, res) => {
 // Get all orders with populated product information
 exports.getOrders = async(req, res) => {
     try {
-        const orders = await Order.find()
+        // Check if filtering by user parameter
+        const userFilter = req.query.user;
+        let query = {};
+
+        if (userFilter) {
+            query = {
+                $or: [
+                    { email: userFilter },
+                    { customer: { $regex: new RegExp(`^${userFilter}$`, 'i') } },
+                    { phoneNumber: userFilter }
+                ]
+            };
+        }
+
+        const orders = await Order.find(query)
             .populate('products.productId', 'name price category')
             .sort({ createdAt: -1 }); // Most recent first
+
+        console.log(`Found ${orders.length} orders`);
 
         // Transform orders for frontend display
         const transformedOrders = orders.map(order => ({
@@ -42,7 +58,7 @@ exports.getOrders = async(req, res) => {
             amount: order.amount,
             status: order.status,
             paymentStatus: order.paymentStatus,
-            payment: order.payment,
+            payment: order.payment || 'Unknown',
             date: order.createdAt,
             shippingAddress: order.shippingAddress,
             products: order.products,
@@ -125,7 +141,7 @@ exports.deleteOrder = async(req, res) => {
 };
 
 // Get orders for a specific user identifier (email, customer name, or phone)
-exports.getOrdersByUser = async (req, res) => {
+exports.getOrdersByUser = async(req, res) => {
     try {
         const { identifier } = req.params;
         if (!identifier) return res.status(400).json({ success: false, message: 'Identifier required' });
@@ -159,3 +175,57 @@ exports.getOrdersByUser = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// Alias for backwards-compatibility with routes that expect different names
+exports.getAllOrders = exports.getOrders;
+
+// Get orders for the "current" user. If authentication middleware populates req.user, that will be used.
+// Otherwise accepts ?email= or ?identifier= query to fetch orders for development/testing purposes.
+exports.getMyOrders = async(req, res) => {
+    try {
+        // Accept identifying info from req.user or query parameters
+        const userEmail = req && req.user && req.user.email ? req.user.email : (req && req.query && req.query.email ? req.query.email : null);
+        const userPhone = req && req.user && req.user.phone ? req.user.phone : (req && req.query && req.query.phone ? req.query.phone : null);
+        const paymentIntent = req && req.query && req.query.paymentIntent ? req.query.paymentIntent : (req && req.body && req.body.paymentIntentId ? req.body.paymentIntentId : null);
+
+        // Build a flexible OR query to match by email, phone, customer name, or payment id
+        const orClauses = [];
+        if (userEmail) orClauses.push({ email: userEmail.toString() });
+        if (userPhone) orClauses.push({ phoneNumber: userPhone.toString() });
+        if (paymentIntent) orClauses.push({ paymentIntentId: paymentIntent.toString() });
+        if (req && req.user && req.user.name) orClauses.push({ customer: { $regex: new RegExp(req.user.name.toString(), 'i') } });
+        if (req && req.query && req.query.identifier) orClauses.push({ customer: { $regex: new RegExp(req.query.identifier.toString(), 'i') } });
+
+        // If nothing to search by, return empty list (do not error)
+        if (orClauses.length === 0) {
+            console.warn('getMyOrders: no identifier provided; returning empty orders');
+            return res.status(200).json({ success: true, orders: [], count: 0, message: 'Not authenticated' });
+        }
+
+        const orders = await Order.find({ $or: orClauses })
+            .populate('products.productId', 'name price category')
+            .sort({ createdAt: -1 });
+
+        const transformedOrders = orders.map(order => ({
+            _id: order._id,
+            customer: order.customer,
+            email: order.email || 'No email provided',
+            amount: order.amount,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            payment: order.payment,
+            date: order.createdAt,
+            shippingAddress: order.shippingAddress,
+            products: order.products,
+            paymentIntentId: order.paymentIntentId
+        }));
+
+        res.status(200).json({ success: true, orders: transformedOrders, count: transformedOrders.length });
+    } catch (error) {
+        console.error('Error fetching my orders:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Provide updateOrder alias used by routes
+exports.updateOrder = exports.updateOrderStatus;

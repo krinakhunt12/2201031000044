@@ -3,6 +3,7 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import StripeCheckout from '../../components/Users/StripeCheckout';
+import PlaceholderImage from '../../components/ui/PlaceholderImage';
 import { clearCart } from '../../features/cart/cartSlice';
 import { useToast } from '../../contexts/ToastContext';
 import { orderAPI } from '../../services/api';
@@ -27,6 +28,11 @@ const CheckoutPage = () => {
     postalCode: ''
   });
 
+  // Address management
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('new');
+  const [showAddressForm, setShowAddressForm] = useState(true);
+
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const shipping = subtotal > 1000 ? 0 : 100; // Free shipping over ₹1000
@@ -37,6 +43,16 @@ const CheckoutPage = () => {
     if (cartItems.length === 0) {
       navigate('/cart');
     }
+    
+    // Load saved addresses
+    try {
+      const saved = localStorage.getItem('savedAddresses');
+      if (saved) {
+        setSavedAddresses(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading saved addresses:', error);
+    }
   }, [cartItems, navigate]);
 
   const handleInputChange = (e) => {
@@ -46,15 +62,61 @@ const CheckoutPage = () => {
     });
   };
 
+  const handleAddressSelect = (e) => {
+    const addressId = e.target.value;
+    setSelectedAddressId(addressId);
+    
+    if (addressId === 'new') {
+      setShowAddressForm(true);
+      setShippingInfo({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        postalCode: ''
+      });
+    } else {
+      const selectedAddress = savedAddresses.find(addr => addr.id === addressId);
+      if (selectedAddress) {
+        setShippingInfo(selectedAddress);
+        setShowAddressForm(false);
+      }
+    }
+  };
+
+  const saveAddress = () => {
+    if (isFormValid() && selectedAddressId === 'new') {
+      const newAddress = {
+        ...shippingInfo,
+        id: Date.now().toString(),
+        label: `${shippingInfo.name} - ${shippingInfo.city}`
+      };
+      
+      const updatedAddresses = [...savedAddresses, newAddress];
+      setSavedAddresses(updatedAddresses);
+      
+      try {
+        localStorage.setItem('savedAddresses', JSON.stringify(updatedAddresses));
+      } catch (error) {
+        console.error('Error saving address:', error);
+      }
+    }
+  };
+
   const createOrder = async () => {
     try {
+      // Save address before creating order
+      saveAddress();
+      
       const orderData = {
         customer: shippingInfo.name,
         email: shippingInfo.email,
         phoneNumber: shippingInfo.phone,
         amount: total,
         items: cartItems.length,
-        payment: 'Stripe',
+        payment: 'Razorpay', // Updated to show Razorpay instead of Stripe
         shippingAddress: {
           street: shippingInfo.address,
           city: shippingInfo.city,
@@ -87,20 +149,72 @@ const CheckoutPage = () => {
     }
   };
 
-  const handlePaymentSuccess = async (paymentIntent) => {
+  const handlePaymentSuccess = async (verifyResponse) => {
     setIsProcessing(true);
-    
+
     try {
+      // verifyResponse may be the server response object from verifyRazorpay
+      const orderObj = verifyResponse && verifyResponse.order ? verifyResponse.order : (verifyResponse && verifyResponse.data && verifyResponse.data.order ? verifyResponse.data.order : null);
+      const paymentIntentId = orderObj ? (orderObj.paymentIntentId || orderObj.payment_id || '') : '';
+
+      if (orderObj && orderObj._id) {
+        setOrderId(orderObj._id);
+        // Persist last placed order so Profile can refresh
+        try {
+          localStorage.setItem('lastOrderPlaced', orderObj._id);
+        } catch (e) {
+          // ignore
+        }
+
+        // Also store the full order object under multiple keys: order email, order customer, and current logged-in user
+        try {
+          const keys = new Set();
+          if (orderObj.email) keys.add(`orders_${orderObj.email}`);
+          if (orderObj.customer) keys.add(`orders_${orderObj.customer.replace(/\s+/g,'_')}`);
+          // attempt to get current logged-in user from localStorage
+          try {
+            const rawUser = localStorage.getItem('user');
+            if (rawUser) {
+              const cur = JSON.parse(rawUser);
+              const curEmail = cur.email || cur.emailOrPhone || cur.emailOrPhone;
+              if (curEmail) keys.add(`orders_${curEmail}`);
+            }
+          } catch (e) {
+            // ignore parse errors
+          }
+
+          keys.forEach(userKey => {
+            try {
+              const raw = localStorage.getItem(userKey);
+              const existing = raw ? JSON.parse(raw) : [];
+              const exists = existing.find(o => (o._id || o.id) === orderObj._id);
+              if (!exists) {
+                existing.unshift(orderObj);
+                const trimmed = existing.slice(0, 20);
+                localStorage.setItem(userKey, JSON.stringify(trimmed));
+              }
+            } catch (e) {
+              // ignore per-key failures
+            }
+          });
+        } catch (e) {
+          console.warn('Failed to persist order locally', e);
+        }
+
+        // Dispatch a custom event so Profile in the same tab can react
+        try { window.dispatchEvent(new CustomEvent('orderPlaced', { detail: orderObj._id })); } catch (e) {}
+      }
+
       showSuccess('Payment successful! Order confirmed.');
-      
+
       // Clear cart
       dispatch(clearCart());
-      
+
       // Redirect to order confirmation
-      navigate(`/order-confirmation/${orderId}`, {
-        state: { paymentIntentId: paymentIntent.id }
+      navigate(`/order-confirmation/${orderId || (orderObj && orderObj._id)}`, {
+        state: { paymentIntentId }
       });
-      
+
     } catch (error) {
       console.error('Post-payment processing failed:', error);
       showError('Payment succeeded but order processing failed. Please contact support.');
@@ -133,107 +247,149 @@ const CheckoutPage = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Shipping Information</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name *
+              {/* Address Selection */}
+              {savedAddresses.length > 0 && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Address
                   </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={shippingInfo.name}
-                    onChange={handleInputChange}
+                  <select
+                    value={selectedAddressId}
+                    onChange={handleAddressSelect}
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-                    required
-                  />
+                  >
+                    <option value="new">+ Add New Address</option>
+                    {savedAddresses.map((addr) => (
+                      <option key={addr.id} value={addr.id}>
+                        {addr.label} ({addr.city}, {addr.state})
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={shippingInfo.email}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={shippingInfo.phone}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Postal Code *
-                  </label>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    value={shippingInfo.postalCode}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-                    required
-                  />
-                </div>
-              </div>
+              )}
               
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address *
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={shippingInfo.address}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-                  required
-                />
-              </div>
+              {/* Address Form */}
+              {showAddressForm && (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={shippingInfo.name}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={shippingInfo.email}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone *
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={shippingInfo.phone}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Postal Code *
+                      </label>
+                      <input
+                        type="text"
+                        name="postalCode"
+                        value={shippingInfo.postalCode}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address *
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={shippingInfo.address}
+                      onChange={handleInputChange}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        City *
+                      </label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={shippingInfo.city}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        State *
+                      </label>
+                      <input
+                        type="text"
+                        name="state"
+                        value={shippingInfo.state}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={shippingInfo.city}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-                    required
-                  />
+              {/* Show selected address info when not editing */}
+              {!showAddressForm && selectedAddressId !== 'new' && (
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <p className="font-medium">{shippingInfo.name}</p>
+                  <p>{shippingInfo.address}</p>
+                  <p>{shippingInfo.city}, {shippingInfo.state} {shippingInfo.postalCode}</p>
+                  <p>{shippingInfo.email} | {shippingInfo.phone}</p>
+                  <button
+                    onClick={() => setShowAddressForm(true)}
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Edit Address
+                  </button>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    State *
-                  </label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={shippingInfo.state}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-                    required
-                  />
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Payment Section */}
@@ -260,8 +416,14 @@ const CheckoutPage = () => {
                   <StripeCheckout
                     amount={total}
                     orderId={orderId}
+                    createOrder={createOrder}
                     onSuccess={handlePaymentSuccess}
                     onError={handlePaymentError}
+                    prefill={{
+                      name: shippingInfo.name,
+                      email: shippingInfo.email,
+                      contact: shippingInfo.phone
+                    }}
                   />
                 </motion.div>
               )}
@@ -276,11 +438,15 @@ const CheckoutPage = () => {
               <div className="space-y-4 mb-6">
                 {cartItems.map((item) => (
                   <div key={`${item._id}-${item.size}`} className="flex items-center space-x-4">
-                    <img
-                      src={item.photos?.[0] || 'https://via.placeholder.com/60x60?text=No+Image'}
-                      alt={item.name}
-                      className="w-15 h-15 object-cover rounded"
-                    />
+                    {item.photos?.[0] ? (
+                      <img
+                        src={item.photos[0]}
+                        alt={item.name}
+                        className="w-15 h-15 object-cover rounded"
+                      />
+                    ) : (
+                      <PlaceholderImage className="w-15 h-15 rounded" alt={item.name} />
+                    )}
                     <div className="flex-1">
                       <h3 className="font-medium">{item.name}</h3>
                       <p className="text-sm text-gray-600">

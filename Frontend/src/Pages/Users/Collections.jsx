@@ -14,6 +14,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { API_BASE_API } from '../../config/api';
 import Navbar from "../../components/Users/Navbar";
 import Footer from "../../components/Users/Footer";
 
@@ -83,7 +84,7 @@ const Collections = () => {
   useEffect(() => {
     // Fetch products by category when a collection is selected
     if (selectedCollection) {
-      fetch(`http://localhost:5000/api/products/category/${encodeURIComponent(selectedCollection.name)}`)
+  fetch(`${API_BASE_API}/products/category/${encodeURIComponent(selectedCollection.name)}`)
         .then((res) => {
           if (!res.ok) throw new Error("Failed to fetch products");
           return res.json();

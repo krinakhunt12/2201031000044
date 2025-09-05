@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { API_BASE_API } from '../../config/api';
 
-const AddProduct = ({ onAdd, onClose }) => {
+const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
   const [formData, setFormData] = useState({
     name: "",
     productType: "",
@@ -9,10 +10,12 @@ const AddProduct = ({ onAdd, onClose }) => {
     stock: "",
     status: "Active",
     sales: 0,
-    size: "",
-    color: "",
+    size: [], // now an array
+    color: [], // now an array
     description: "",
   });
+  const [colorInput, setColorInput] = useState("");
+  const [editing, setEditing] = useState(Boolean(initialData));
 
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -38,6 +41,35 @@ const AddProduct = ({ onAdd, onClose }) => {
     setPhotos(Array.from(e.target.files));
   };
 
+  const toggleSize = (sizeValue) => {
+    setFormData((prev) => {
+      const sizes = Array.isArray(prev.size) ? [...prev.size] : [];
+      const idx = sizes.indexOf(sizeValue);
+      if (idx > -1) sizes.splice(idx, 1);
+      else sizes.push(sizeValue);
+      return { ...prev, size: sizes };
+    });
+  };
+
+  const addColor = () => {
+    const val = (colorInput || "").trim();
+    if (!val) return;
+    setFormData((prev) => {
+      const colors = Array.isArray(prev.color) ? [...prev.color] : [];
+      if (!colors.includes(val)) colors.push(val);
+      return { ...prev, color: colors };
+    });
+    setColorInput("");
+  };
+
+  const removeColor = (idx) => {
+    setFormData((prev) => {
+      const colors = Array.isArray(prev.color) ? [...prev.color] : [];
+      colors.splice(idx, 1);
+      return { ...prev, color: colors };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -46,6 +78,18 @@ const AddProduct = ({ onAdd, onClose }) => {
 
     if (!formData.name || !formData.productType || !formData.category || !formData.price) {
       setError("Please fill in all required fields");
+      setLoading(false);
+      return;
+    }
+
+    if (!Array.isArray(formData.size) || formData.size.length === 0) {
+      setError('Please select at least one size');
+      setLoading(false);
+      return;
+    }
+
+    if (!Array.isArray(formData.color) || formData.color.length === 0) {
+      setError('Please add at least one color');
       setLoading(false);
       return;
     }
@@ -65,36 +109,59 @@ const AddProduct = ({ onAdd, onClose }) => {
 
     try {
       const form = new FormData();
-      Object.keys(formData).forEach((key) => form.append(key, formData[key]));
+      for (const key of Object.keys(formData)) {
+        const value = formData[key];
+        if (Array.isArray(value)) {
+          value.forEach((v) => form.append(key, v));
+        } else {
+          form.append(key, value != null ? value : "");
+        }
+      }
       photos.forEach((file) => form.append("photos", file));
+      let data;
+      if (editing && initialData && initialData._id) {
+        // update existing product (use PUT with form data)
+  const res = await fetch(`${API_BASE_API}/products/update/${initialData._id}`, {
+          method: 'PUT',
+          body: form
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error('Failed to update product: ' + text);
+        }
+        data = await res.json();
+        setSuccess(true);
+        if (onUpdate) onUpdate(data.product || data);
+      } else {
+  const response = await fetch(`${API_BASE_API}/products/add`, {
+          method: "POST",
+          body: form,
+        });
 
-      const response = await fetch("http://localhost:5000/api/products/add", {
-        method: "POST",
-        body: form,
-      });
+        if (!response.ok) {
+          let errorText = await response.text();
+          throw new Error("Failed to add product: " + errorText);
+        }
 
-      if (!response.ok) {
-        let errorText = await response.text();
-        throw new Error("Failed to add product: " + errorText);
+        data = await response.json();
+        setSuccess(true);
+        setFormData({
+          name: "",
+          productType: "",
+          category: "Male",
+          price: "",
+          stock: "",
+          status: "Active",
+          sales: 0,
+          size: [],
+          color: [],
+          description: "",
+        });
+        setColorInput("");
+        setPhotos([]);
+        if (onAdd) onAdd(data.product || data);
       }
 
-      const data = await response.json();
-      setSuccess(true);
-      setFormData({
-        name: "",
-        productType: "",
-        category: "Male",
-        price: "",
-        stock: "",
-        status: "Active",
-        sales: 0,
-        size: "",
-        color: "",
-        description: "",
-      });
-      setPhotos([]);
-
-      if (onAdd) onAdd(data.product);
       setTimeout(() => {
         setSuccess(false);
         onClose();
@@ -105,6 +172,28 @@ const AddProduct = ({ onAdd, onClose }) => {
       setLoading(false);
     }
   };
+
+  // Initialize form when editing
+  React.useEffect(() => {
+    if (initialData) {
+      const copy = {
+        name: initialData.name || '',
+        productType: initialData.productType || initialData.type || '',
+        category: initialData.category || 'Male',
+        price: initialData.price || '',
+        stock: initialData.stock || '',
+        status: initialData.status || 'Active',
+        sales: initialData.sales || 0,
+        size: Array.isArray(initialData.size) ? initialData.size : (initialData.size ? String(initialData.size).split(',').map(s=>s.trim()).filter(Boolean) : []),
+        color: Array.isArray(initialData.color) ? initialData.color : (initialData.color ? String(initialData.color).split(',').map(s=>s.trim()).filter(Boolean) : []),
+        description: initialData.description || '',
+      };
+      setFormData(copy);
+      // if initial colors present, ensure colorInput is empty
+      setColorInput("");
+      setEditing(true);
+    }
+  }, [initialData]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-emerald-100">
@@ -281,39 +370,48 @@ const AddProduct = ({ onAdd, onClose }) => {
                 )}
               </div>
 
-              {/* Size Dropdown */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700">Size</label>
-                <select
-                  name="size"
-                  value={formData.size}
-                  onChange={handleChange}
-                  className="mt-2 block w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                >
-                  <option value="">Select Size</option>
-                  <option value="XXS">XXS</option>
-                  <option value="XS">XS</option>
-                  <option value="S">S</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="XL">XL</option>
-                  <option value="2XL">2XL</option>
-                  <option value="3XL">3XL</option>
-                </select>
-              </div>
+                  {/* Size checkboxes (multiple) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700">Sizes (select one or more)</label>
+                    <div className="mt-2 grid grid-cols-4 gap-2">
+                      {['XXS','XS','S','M','L','XL','2XL','3XL'].map((sz) => (
+                        <label key={sz} className="inline-flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={Array.isArray(formData.size) ? formData.size.includes(sz) : false}
+                            onChange={() => toggleSize(sz)}
+                            className="form-checkbox h-4 w-4 text-blue-600"
+                          />
+                          <span className="text-sm">{sz}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
 
-              {/* Color */}
+              {/* Color tags (multiple) */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700">Color</label>
-                <input
-                  type="text"
-                  name="color"
-                  value={formData.color}
-                  onChange={handleChange}
-                  className="mt-2 block w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
+                <label className="block text-sm font-semibold text-gray-700">Colors (add one or more)</label>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={colorInput}
+                    onChange={(e) => setColorInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }}
+                    placeholder="Type color and press Enter"
+                    className="block w-full border border-gray-300 rounded-lg px-3 py-2"
+                  />
+                  <button type="button" onClick={addColor} className="px-3 py-2 bg-blue-600 text-white rounded">Add</button>
+                </div>
+                {Array.isArray(formData.color) && formData.color.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {formData.color.map((c, idx) => (
+                      <span key={idx} className="bg-gray-100 px-2 py-1 rounded inline-flex items-center gap-2">
+                        <span className="text-xs">{c}</span>
+                        <button type="button" onClick={() => removeColor(idx)} className="text-red-500 text-xs">×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Price */}
@@ -395,7 +493,7 @@ const AddProduct = ({ onAdd, onClose }) => {
             {error && <div className="text-red-600 text-center">{error}</div>}
             {success && <div className="text-green-600 text-center">Product added successfully!</div>}
 
-            {/* Buttons */}
+        {/* Buttons */}
             <div className="flex justify-end space-x-3 pt-6">
               <button
                 type="button"
@@ -407,10 +505,10 @@ const AddProduct = ({ onAdd, onClose }) => {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-gradient-to-r from-blue-600 to-emerald-500 text-white rounded-lg font-semibold"
+          className="px-5 py-2 bg-gradient-to-r from-blue-600 to-emerald-500 text-white rounded-lg font-semibold"
                 disabled={loading}
               >
-                Add Product
+          {editing ? 'Update Product' : 'Add Product'}
               </button>
             </div>
           </form>

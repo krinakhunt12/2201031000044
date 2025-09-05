@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_API } from '../../config/api';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth'; // Add this import
@@ -33,7 +34,7 @@ const SignUp = ({ handleSwitchMode }) => {
     setIsLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/signup', {
+  const res = await fetch(`${API_BASE_API}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(signupFormData),

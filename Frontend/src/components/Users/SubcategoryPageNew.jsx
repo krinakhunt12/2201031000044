@@ -37,7 +37,19 @@ const SubcategoryPageNew = ({
       try {
         // Search for products based on the subcategory
         const searchResults = await searchProducts(query, 20);
-        setProducts(searchResults);
+        // Deduplicate results (products may be present multiple times across collections)
+        const uniqueMap = new Map();
+        searchResults.forEach(p => {
+          const key = p.id || p._id || p.name || JSON.stringify(p);
+          if (!uniqueMap.has(key)) {
+            // Normalize size/color fields to canonical keys used elsewhere
+            const normalized = { ...p };
+            if (!normalized.sizes && normalized.size) normalized.sizes = Array.isArray(normalized.size) ? normalized.size : String(normalized.size).split(',').map(s=>s.trim()).filter(Boolean);
+            if (!normalized.colors && normalized.color) normalized.colors = Array.isArray(normalized.color) ? normalized.color : String(normalized.color).split(',').map(s=>s.trim()).filter(Boolean);
+            uniqueMap.set(key, normalized);
+          }
+        });
+        setProducts(Array.from(uniqueMap.values()));
       } catch (error) {
         console.error('Error loading products:', error);
         setProducts([]);

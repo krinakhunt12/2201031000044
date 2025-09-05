@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { API_BASE_API } from '../config/api';
 
 // Create axios instance with base configuration
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: API_BASE_API,
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
@@ -87,6 +88,33 @@ export const orderAPI = {
         return response.data;
     },
 
+    // Get orders for current/authenticated user
+    getMyOrders: async() => {
+        console.log('🔄 API Call: getMyOrders');
+
+        // Try to get user from localStorage to pass as query params
+        let userEmail = null;
+        let userPhone = null;
+        try {
+            const userRaw = localStorage.getItem('user');
+            if (userRaw) {
+                const user = JSON.parse(userRaw);
+                userEmail = user.email || user.emailOrPhone || null;
+                userPhone = user.phone || null;
+            }
+        } catch (error) {
+            console.warn('Could not get user from localStorage:', error);
+        }
+
+        const params = [];
+        if (userEmail) params.push(`email=${encodeURIComponent(userEmail)}`);
+        if (userPhone) params.push(`phone=${encodeURIComponent(userPhone)}`);
+        const query = params.length > 0 ? `?${params.join('&')}` : '';
+        const response = await api.get(`/orders/me${query}`);
+        console.log('✅ API Response:', response.data);
+        return response.data;
+    },
+
     // Get order by ID
     getOrderById: async(id) => {
         console.log('🔄 API Call: getOrderById', id);
@@ -95,10 +123,10 @@ export const orderAPI = {
         return response.data;
     },
 
-    // Update order status
+    // Update order status (matches backend PATCH /orders/:id)
     updateOrderStatus: async(id, status) => {
         console.log('🔄 API Call: updateOrderStatus', id, status);
-        const response = await api.put(`/orders/${id}/status`, { status });
+        const response = await api.patch(`/orders/${id}`, { status });
         console.log('✅ API Response:', response.data);
         return response.data;
     },
@@ -117,7 +145,7 @@ export const paymentAPI = {
     // Create payment intent
     createPaymentIntent: async(orderData) => {
         console.log('🔄 API Call: createPaymentIntent', orderData);
-        const response = await api.post('/payment/create-payment-intent', orderData);
+        const response = await api.post('/payments/create-payment-intent', orderData);
         console.log('✅ API Response:', response.data);
         return response.data;
     },
@@ -125,10 +153,20 @@ export const paymentAPI = {
     // Confirm payment
     confirmPayment: async(paymentIntentId, paymentMethodId) => {
         console.log('🔄 API Call: confirmPayment', paymentIntentId, paymentMethodId);
-        const response = await api.post('/payment/confirm', {
+        const response = await api.post('/payments/confirm', {
             paymentIntentId,
             paymentMethodId
         });
+        console.log('✅ API Response:', response.data);
+        return response.data;
+    }
+};
+
+// Stats API
+export const statsAPI = {
+    getStats: async() => {
+        console.log('🔄 API Call: getStats');
+        const response = await api.get('/stats');
         console.log('✅ API Response:', response.data);
         return response.data;
     }

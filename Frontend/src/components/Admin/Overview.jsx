@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { statsAPI } from '../../services/api';
 import {
   Users,
   Package,
@@ -11,7 +12,35 @@ import {
   Calendar,
 } from "lucide-react";
 
-const Overview = ({ stats, orders }) => {
+const Overview = ({ orders }) => {
+  const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, totalOrders: 0, revenue: 0, newUsers: 0, conversionRate: '0%' , avgOrderValue: 0 });
+
+  const getStats = async () => {
+    try {
+      const res = await statsAPI.getStats();
+      if (res && res.success && res.stats) {
+        setStats({
+          totalUsers: res.stats.users || 0,
+          totalProducts: res.stats.products || 0,
+          totalOrders: res.stats.orders || 0,
+          revenue: res.stats.revenue || 0,
+          newUsers: 0,
+          conversionRate: '0%',
+          avgOrderValue: res.stats.orders ? Math.round((res.stats.revenue || 0) / (res.stats.orders || 1)) : 0,
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to fetch stats', e);
+    }
+  };
+
+  useEffect(() => {
+    getStats();
+    function onAdminUpdate() { getStats(); }
+    window.addEventListener('adminDataUpdated', onAdminUpdate);
+    return () => window.removeEventListener('adminDataUpdated', onAdminUpdate);
+  }, []);
+
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
@@ -52,7 +81,7 @@ const Overview = ({ stats, orders }) => {
         <StatCard
           title="Total Products"
           value={stats.totalProducts}
-          trend="5 categories"
+          trend="Categories"
           icon={<Package className="w-5 h-5" />}
           color="emerald"
         />

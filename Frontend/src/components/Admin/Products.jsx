@@ -14,6 +14,8 @@ import {
   X,
 } from "lucide-react";
 import AddProduct from "./AddProduct";
+import ConfirmDialog from '../ui/ConfirmDialog';
+import { useToast } from '../../contexts/ToastContext';
 
 const Products = ({
   searchQuery,
@@ -23,49 +25,84 @@ const Products = ({
   handleSort,
   getStatusColor,
 }) => {
+  // Helper to coerce a possibly-string or missing value into an array
+  const toArray = (val) => {
+    if (Array.isArray(val)) return val;
+    if (val === undefined || val === null) return [];
+    // If it's an object with keys (unlikely for sizes/colors), return empty
+    if (typeof val === 'object') return [];
+    // If it's a string, split on comma
+    return String(val).split(',').map(s => s.trim()).filter(Boolean);
+  };
   // Products state is managed in AdminDashboard and passed as props
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editProductData, setEditProductData] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { showSuccess, showError } = useToast();
 
   // API: Add Product
   const handleAddProduct = async (productData) => {
     try {
       await productAPI.addProduct(productData);
       setShowAddForm(false);
-      window.location.reload(); // Or refetch products in parent
+      try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (err) {
-      alert('Failed to add product');
+      console.error('Failed to add product', err);
+      showError('Failed to add product');
     }
   };
 
   // API: Edit Product
   const handleEditProduct = async (id, productData) => {
-    try {
-      await productAPI.updateProduct(id, productData);
-      window.location.reload();
-    } catch (err) {
-      alert('Failed to update product');
-    }
+  // open edit modal with product data
+  setEditProductData(productData);
+  setShowAddForm(true);
   };
 
   // API: Delete Product
   const handleDeleteProduct = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    // open confirm dialog instead
+    setDeleteTarget(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!deleteTarget) return;
     try {
-      await productAPI.deleteProduct(id);
-      window.location.reload();
+      setDeleteLoading(true);
+      await productAPI.deleteProduct(deleteTarget);
+  setDeleteConfirmOpen(false);
+  setDeleteTarget(null);
+  showSuccess('Product deleted');
+  try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (err) {
-      alert('Failed to delete product');
+      console.error('Failed to delete product', err);
+      showError('Failed to delete product');
+    } finally {
+      setDeleteLoading(false);
     }
   };
+
+  // Apply status filter to the incoming filteredProducts prop
+  const filteredByStatus = filteredProducts.filter((product) => {
+    if (!activeFilter || activeFilter === 'all') return true;
+    try {
+      return (product.status || '').toString().toLowerCase() === activeFilter.toString().toLowerCase();
+    } catch (e) {
+      return false;
+    }
+  });
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const currentItems = filteredByStatus.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredByStatus.length / itemsPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -103,7 +140,7 @@ const Products = ({
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
+          {filteredByStatus.length} {filteredByStatus.length === 1 ? "product" : "products"} found
             </div>
             <input
               type="text"
@@ -219,9 +256,16 @@ const Products = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
-                      {product.category}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-700 bg-gray-100 px-2 py-1 rounded-full inline-block">
+                        {product.category}
+                      </span>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {toArray(product.size).slice(0,6).map((s, i) => (
+                          <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">{s}</span>
+                        ))}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     ₹{product.price ? product.price.toLocaleString() : "N/A"}
@@ -249,6 +293,13 @@ const Products = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {product.sales ? product.sales.toLocaleString() : "0"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-wrap gap-1">
+                      {toArray(product.color).map((c, i) => (
+                        <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded-full">{c}</span>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
                     <button
@@ -347,9 +398,21 @@ const Products = ({
       {showAddForm && (
         <AddProduct
           onAdd={handleAddProduct}
-          onClose={() => setShowAddForm(false)}
+          onUpdate={() => { try { window.dispatchEvent(new Event('adminDataUpdated')); } catch(e){} }}
+          initialData={editProductData}
+          onClose={() => { setShowAddForm(false); setEditProductData(null); }}
         />
       )}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title="Delete Product"
+        message="Are you sure you want to permanently delete this product? This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={deleteLoading}
+        onConfirm={confirmDeleteProduct}
+        onCancel={() => { setDeleteConfirmOpen(false); setDeleteTarget(null); }}
+      />
     </div>
   );
 };

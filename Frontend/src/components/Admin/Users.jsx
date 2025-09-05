@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { productAPI } from "../../services/api";
 import { Search, Plus, Eye, Edit, Trash2, User, ChevronUp, ChevronDown } from "lucide-react";
+import ConfirmDialog from '../ui/ConfirmDialog';
+import { useToast } from '../../contexts/ToastContext';
 
 const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor, getRoleColor }) => {
   // Sorting and pagination handled in parent (AdminDashboard)
@@ -15,6 +17,11 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
     }
     setSortConfig({ key, direction });
   };
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { showSuccess, showError } = useToast();
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -41,7 +48,7 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
   const handleAddUser = async (userData) => {
     try {
       await api.post('/users', userData);
-      window.location.reload(); // Or refetch users in parent
+  try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (err) {
       alert('Failed to add user');
     }
@@ -51,7 +58,7 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
   const handleEditUser = async (id, userData) => {
     try {
       await api.put(`/users/${id}`, userData);
-      window.location.reload();
+  try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (err) {
       alert('Failed to update user');
     }
@@ -59,12 +66,24 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
 
   // API: Delete User
   const handleDeleteUser = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    setDeleteTarget(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/users/${id}`);
-      window.location.reload();
+      setDeleteLoading(true);
+      await api.delete(`/users/${deleteTarget}`);
+      setDeleteConfirmOpen(false);
+      setDeleteTarget(null);
+      showSuccess('User deleted');
+      try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
     } catch (err) {
-      alert('Failed to delete user');
+      console.error('Failed to delete user', err);
+      showError('Failed to delete user');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -218,6 +237,16 @@ const Users = ({ searchQuery, setSearchQuery, filteredUsers = [], getStatusColor
           </tbody>
         </table>
       </div>
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title="Delete User"
+        message="Are you sure you want to permanently delete this user? This cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={deleteLoading}
+        onConfirm={confirmDeleteUser}
+        onCancel={() => { setDeleteConfirmOpen(false); setDeleteTarget(null); }}
+      />
 
       {/* Pagination */}
       {filteredUsers.length > 0 && (

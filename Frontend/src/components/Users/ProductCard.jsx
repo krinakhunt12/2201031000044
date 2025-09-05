@@ -11,8 +11,8 @@ import { useToast } from '../../contexts/ToastContext';
 
 const ProductCard = ({ product, showColors = true, showRating = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [selectedColor, setSelectedColor] = useState(product.color || 'Default');
-  const [selectedSize, setSelectedSize] = useState(product.size || "");
+  const [selectedColor, setSelectedColor] = useState(Array.isArray(product.color) ? product.color[0] : (product.color || (product.colors && product.colors[0]) || 'Default'));
+  const [selectedSize, setSelectedSize] = useState(Array.isArray(product.size) ? product.size[0] : (product.size || (product.sizes && product.sizes[0]) || ""));
   const [showQuickView, setShowQuickView] = useState(false);
   
   const dispatch = useAppDispatch();
@@ -88,7 +88,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
         className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 group"
       >
       <div className="relative">
-        <Link to={`/product/${product._id}`}>
+  <Link to={`/product/${product._id}`}>
           <img
             src={productImage}
             alt={product.name}
@@ -128,6 +128,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
           initial={{ opacity: 0, y: 10 }}
           whileHover={{ opacity: 1, y: 0 }}
           className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap hover:bg-gray-800 transition-colors"
+          onClick={(e)=>{ e.stopPropagation(); setShowQuickView(true); }}
         >
           Quick View
         </motion.button>
@@ -135,11 +136,11 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
       
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <Link to={`/product/${product._id}`} className="flex-1">
+          <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-800 line-clamp-1 hover:text-black transition-colors">
               {product.name}
             </h3>
-          </Link>
+          </div>
           {showRating && product.rating && (
             <div className="flex items-center bg-gray-100 px-2 py-1 rounded-full">
               <StarIcon className="w-4 h-4 text-yellow-400 mr-1" />
@@ -160,26 +161,26 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
           )}
         </div>
         
-        {/* Size Selection */}
-        {product.size && (
+        {/* Size Selection (render multiple sizes as chips) */}
+        {(product.sizes || product.size || product.sizes === undefined) && (
           <div className="mb-3">
             <span className="text-xs text-gray-500 block mb-1">Size:</span>
             <div className="flex space-x-1">
-              <span className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600">
-                {product.size}
-              </span>
+              {(Array.isArray(product.sizes) ? product.sizes : (product.size ? (Array.isArray(product.size) ? product.size : String(product.size).split(',').map(s=>s.trim()).filter(Boolean)) : [])).map((sz, idx) => (
+                <span key={idx} className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600">{sz}</span>
+              ))}
             </div>
           </div>
         )}
         
-        {/* Color Selection */}
-        {showColors && product.color && (
+        {/* Color Selection (render multiple colors as chips) */}
+        {showColors && (
           <div className="mb-3">
             <span className="text-xs text-gray-500 block mb-1">Color:</span>
             <div className="flex space-x-1">
-              <span className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600">
-                {product.color}
-              </span>
+              {(Array.isArray(product.colors) ? product.colors : (product.color ? (Array.isArray(product.color) ? product.color : String(product.color).split(',').map(s=>s.trim()).filter(Boolean)) : [])).map((c, idx) => (
+                <span key={idx} className="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600">{c}</span>
+              ))}
             </div>
           </div>
         )}

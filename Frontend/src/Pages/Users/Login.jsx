@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth'; // Add this import
+import { API_BASE_API } from '../../config/api';
 
 const Login = ({ handleSwitchMode }) => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Login = ({ handleSwitchMode }) => {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`,
+        `${API_BASE_API}/auth/login`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
