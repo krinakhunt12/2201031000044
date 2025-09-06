@@ -73,6 +73,19 @@ const Profile = () => {
     }
   }, [user, navigate]);
 
+  // Sync profile form with authenticated user when available
+  useEffect(() => {
+    if (!user) return;
+    setProfileData(prev => ({
+      firstName: user.firstName || (user.name ? user.name.split(' ')[0] : prev.firstName),
+      lastName: user.lastName || (user.name ? user.name.split(' ').slice(1).join(' ') : prev.lastName),
+      email: user.email || user.emailOrPhone || prev.email,
+      phone: user.phone || prev.phone,
+      address: user.address || prev.address,
+      dateOfBirth: user.dateOfBirth || prev.dateOfBirth
+    }));
+  }, [user]);
+
   if (!user) return null;
 
   useEffect(() => {
@@ -353,9 +366,9 @@ const Profile = () => {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">
-                    {profileData.firstName} {profileData.lastName}
+                    {user?.name ? user.name : `${profileData.firstName} ${profileData.lastName}`}
                   </h1>
-                  <p className="text-gray-600">Member since January 2024</p>
+                  <p className="text-gray-600">{user?.email || profileData.email}</p>
                 </div>
               </div>
               
