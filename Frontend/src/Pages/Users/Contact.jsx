@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Clock, MessageSquare, Instagram, Twitter, Facebook } from 'lucide-react';
 import Navbar from '../../components/Users/Navbar';
 import Footer from '../../components/Users/Footer';
+import { API_BASE_API } from '../../config/api';
+import { useToast } from '../../contexts/ToastContext';
 const Contact = () => {
   return (
     <div className="bg-white min-h-screen">
@@ -22,83 +24,7 @@ const Contact = () => {
           {/* Contact Form */}
           <div className="bg-white rounded-xl shadow-md p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a message</h2>
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    id="first-name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Your first name"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="last-name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    id="last-name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Your last name"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="your.email@example.com"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject
-                </label>
-                <select
-                  id="subject"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option>Select a subject</option>
-                  <option>Product Inquiry</option>
-                  <option>Order Support</option>
-                  <option>Returns & Exchanges</option>
-                  <option>Styling Advice</option>
-                  <option>Collaboration</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  rows={5}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Your message here..."
-                ></textarea>
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  className="w-full bg-gray-700  text-white font-medium py-3 px-6 rounded-lg hover:from-indigo-700 hover:to-rose-700 transition-all duration-300 shadow-md hover:shadow-lg"
-                >
-                  Send Message
-                </button>
-              </div>
-            </form>
+            <ContactForm />
           </div>
 
           {/* Contact Info */}
@@ -221,3 +147,102 @@ const Contact = () => {
 };
 
 export default Contact;
+
+function ContactForm() {
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const { showSuccess, showError } = useToast();
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    setForm(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    // basic validation: message required and at least one contact method
+    if (!form.message || (!form.email && !form.phone)) {
+      showError('Please provide a message and at least an email or phone number.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_API}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showError(err.message || 'Failed to send message. Please try again later.');
+        setLoading(false);
+        return;
+      }
+
+      showSuccess('Message sent. We will get back to you soon.');
+      setForm({ firstName: '', lastName: '', email: '', phone: '', subject: '', message: '' });
+    } catch (err) {
+      showError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form className="space-y-6" onSubmit={handleSubmit}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+          <input id="firstName" value={form.firstName} onChange={handleChange} type="text" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Your first name" />
+        </div>
+        <div>
+          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+          <input id="lastName" value={form.lastName} onChange={handleChange} type="text" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Your last name" />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+        <input id="email" value={form.email} onChange={handleChange} type="email" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="your.email@example.com" />
+      </div>
+
+      <div>
+        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone (optional)</label>
+        <input id="phone" value={form.phone} onChange={handleChange} type="tel" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Phone number" />
+      </div>
+
+      <div>
+        <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+        <select id="subject" value={form.subject} onChange={handleChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">Select a subject</option>
+          <option>Product Inquiry</option>
+          <option>Order Support</option>
+          <option>Returns &amp; Exchanges</option>
+          <option>Styling Advice</option>
+          <option>Collaboration</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+        <textarea id="message" value={form.message} onChange={handleChange} rows={5} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Your message here..." />
+      </div>
+
+      <div>
+        <button type="submit" disabled={loading} className="w-full bg-gray-700 disabled:opacity-60 text-white font-medium py-3 px-6 rounded-lg hover:from-indigo-700 hover:to-rose-700 transition-all duration-300 shadow-md hover:shadow-lg">
+          {loading ? 'Sending...' : 'Send Message'}
+        </button>
+      </div>
+    </form>
+  );
+}

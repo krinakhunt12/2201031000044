@@ -9,6 +9,7 @@ const orderRoutes = require('./routes/order');
 const userRoutes = require('./routes/user');
 const statsRoutes = require('./routes/stats');
 const paymentRoutes = require('./routes/payment');
+const contactRoutes = require('./routes/contact');
 require('dotenv').config();
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Admin dashboard APIs
 app.use('/api/orders', orderRoutes);
