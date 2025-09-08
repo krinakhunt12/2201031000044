@@ -5,6 +5,21 @@ exports.createOrder = async(req, res) => {
     try {
         const orderData = req.body;
 
+        // Basic validation to return helpful errors instead of a 500
+        const requiredFields = ['customer', 'amount', 'items', 'payment'];
+        const missing = requiredFields.filter(f => {
+            // treat 0 as valid number
+            if (typeof orderData[f] === 'number') return false;
+            return !orderData[f];
+        });
+        if (missing.length > 0) {
+            console.warn('createOrder: missing required fields', missing, 'body:', orderData);
+            return res.status(400).json({ success: false, message: 'Missing required fields: ' + missing.join(', '), missing, body: orderData });
+        }
+
+        // Ensure products is an array
+        if (!Array.isArray(orderData.products)) orderData.products = [];
+
         // Add email to order if not provided
         if (!orderData.email && orderData.customer) {
             orderData.email = `${orderData.customer.toLowerCase().replace(/\s+/g, '')}@example.com`;
@@ -19,7 +34,7 @@ exports.createOrder = async(req, res) => {
             message: 'Order created successfully'
         });
     } catch (error) {
-        console.error('Error creating order:', error);
+        console.error('Error creating order:', error, 'request body:', req && req.body);
         res.status(500).json({
             success: false,
             message: error.message

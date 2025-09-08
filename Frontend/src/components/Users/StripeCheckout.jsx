@@ -48,10 +48,22 @@ const CheckoutForm = ({ amount, orderId, createOrder, onSuccess, onError, prefil
 
       // Create razorpay order on backend
       const apiBase = import.meta.env.VITE_API_URL || '';
+      // gather user info from prefill or localStorage
+      let userFallback = {};
+      try {
+        const raw = localStorage.getItem('user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          userFallback = { name: u.name, email: u.email || u.emailOrPhone, phone: u.phone };
+        }
+      } catch (e) {}
+
+      const createBody = { amount, currency: 'INR', orderId: activeOrderId, user: { name: prefill.name || userFallback.name || '', email: prefill.email || userFallback.email || '', phone: prefill.contact || userFallback.phone || '' } };
+
       const resp = await fetch(`${apiBase}/api/payments/create-payment-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, currency: 'INR', orderId: activeOrderId })
+        body: JSON.stringify(createBody)
       });
       const data = await resp.json();
       if (!data.success || !data.razorpayOrder) {
@@ -80,9 +92,9 @@ const CheckoutForm = ({ amount, orderId, createOrder, onSuccess, onError, prefil
                 orderId: activeOrderId,
                 amount: amount,
                 user: {
-                  name: prefill.name,
-                  email: prefill.email,
-                  phone: prefill.contact
+                  name: prefill.name || userFallback.name || '',
+                  email: prefill.email || userFallback.email || '',
+                  phone: prefill.contact || userFallback.phone || ''
                 }
               })
             });

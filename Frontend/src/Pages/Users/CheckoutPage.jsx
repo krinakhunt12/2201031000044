@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../hooks/useAuth';
 import StripeCheckout from '../../components/Users/StripeCheckout';
 import PlaceholderImage from '../../components/ui/PlaceholderImage';
 import { clearCart } from '../../features/cart/cartSlice';
@@ -18,10 +19,11 @@ const CheckoutPage = () => {
   const [orderId, setOrderId] = useState(null);
   
   // Shipping information
+  const { user } = useAuth();
   const [shippingInfo, setShippingInfo] = useState({
-    name: '',
-    email: '',
-    phone: '',
+    name: user?.name || '',
+    email: user?.email || user?.emailOrPhone || '',
+    phone: user?.phone || '',
     address: '',
     city: '',
     state: '',
@@ -53,6 +55,19 @@ const CheckoutPage = () => {
     } catch (error) {
       console.error('Error loading saved addresses:', error);
     }
+    // If user exists, prefill name / email / phone
+    try {
+      const authRaw = localStorage.getItem('user');
+      const authUser = authRaw ? JSON.parse(authRaw) : (user || null);
+      if (authUser) {
+        setShippingInfo(prev => ({
+          ...prev,
+          name: prev.name || authUser.name || '',
+          email: authUser.email || authUser.emailOrPhone || prev.email,
+          phone: prev.phone || authUser.phone || ''
+        }));
+      }
+    } catch (e) {}
   }, [cartItems, navigate]);
 
   const handleInputChange = (e) => {
@@ -110,10 +125,19 @@ const CheckoutPage = () => {
       // Save address before creating order
       saveAddress();
       
+      // prefer logged-in user email/name/phone when available
+      let authUser = null;
+      try { authUser = JSON.parse(localStorage.getItem('user') || 'null'); } catch (e) { authUser = null; }
+
+      // small helper to avoid sending invalid ObjectId values to the backend
+      const isValidObjectId = (id) => {
+        return typeof id === 'string' && /^[a-f\d]{24}$/i.test(id);
+      };
+
       const orderData = {
-        customer: shippingInfo.name,
-        email: shippingInfo.email,
-        phoneNumber: shippingInfo.phone,
+        customer: shippingInfo.name || (authUser && authUser.name) || '',
+        email: (authUser && (authUser.email || authUser.emailOrPhone)) || shippingInfo.email,
+        phoneNumber: (authUser && authUser.phone) || shippingInfo.phone,
         amount: total,
         items: cartItems.length,
         payment: 'Razorpay', // Updated to show Razorpay instead of Stripe
@@ -125,7 +149,8 @@ const CheckoutPage = () => {
           country: 'India'
         },
         products: cartItems.map(item => ({
-          productId: item._id,
+          // only send productId when it's a valid 24-char hex ObjectId; otherwise send null
+          productId: isValidObjectId(item._id) ? item._id : null,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
@@ -286,19 +311,7 @@ const CheckoutPage = () => {
                       />
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={shippingInfo.email}
-                        onChange={handleInputChange}
-                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-                        required
-                      />
-                    </div>
+                    {/* Email is taken from logged-in account and no longer editable here */}
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -413,18 +426,23 @@ const CheckoutPage = () => {
                   className="bg-white p-6 rounded-lg shadow-lg border border-gray-100"
                 >
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">Payment</h3>
-                  <StripeCheckout
-                    amount={total}
-                    orderId={orderId}
-                    createOrder={createOrder}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    prefill={{
-                      name: shippingInfo.name,
-                      email: shippingInfo.email,
-                      contact: shippingInfo.phone
-                    }}
-                  />
+                  {(() => {
+                    const prefill = {
+                      name: shippingInfo.name || (user && user.name) || '',
+                      email: (user && (user.email || user.emailOrPhone)) || shippingInfo.email || '',
+                      contact: shippingInfo.phone || (user && user.phone) || ''
+                    };
+                    return (
+                      <StripeCheckout
+                        amount={total}
+                        orderId={orderId}
+                        createOrder={createOrder}
+                        onSuccess={handlePaymentSuccess}
+                        onError={handlePaymentError}
+                        prefill={prefill}
+                      />
+                    );
+                  })()}
                 </motion.div>
               )}
             </div>

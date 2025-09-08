@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiX, FiStar, FiShoppingCart } from 'react-icons/fi';
 import { FaStar, FaStarHalfAlt } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import Navbar from '../../components/Users/Navbar';
+import Footer from '../../components/Users/Footer';
+import ProductCard from '../../components/Users/ProductCard';
 
 const Shop = () => {
   // Sample product data
@@ -154,7 +158,8 @@ if (searchTerm) {
   };
 
   return (
-    <div className="bg-white">
+    <div className="bg-white min-h-screen flex flex-col">
+      <Navbar />
       {/* Mobile filter dialog */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -372,67 +377,19 @@ if (searchTerm) {
             <div className="lg:col-span-3">
               {currentProducts.length > 0 ? (
                 <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
-                  {currentProducts.map((product) => (
-                    <div key={product.id} className="group relative">
-                      <div className="min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md bg-gray-200 group-hover:opacity-75 lg:aspect-none lg:h-80">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="h-full w-full object-cover object-center lg:h-full lg:w-full"
-                        />
-                        {product.onSale && (
-                          <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-                            SALE
-                          </div>
-                        )}
-                        {product.stock <= 5 && product.stock > 0 && (
-                          <div className="absolute top-2 left-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">
-                            LOW STOCK
-                          </div>
-                        )}
-                        {product.stock === 0 && (
-                          <div className="absolute top-2 left-2 bg-gray-500 text-white text-xs font-bold px-2 py-1 rounded">
-                            OUT OF STOCK
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-4 flex justify-between">
-                        <div>
-                          <h3 className="text-sm text-gray-700">
-                            <a href={`/product/${product.id}`}>
-                              <span aria-hidden="true" className="absolute inset-0" />
-                              {product.name}
-                            </a>
-                          </h3>
-                          <div className="mt-1 flex items-center">
-                            {renderRatingStars(product.rating)}
-                            <span className="ml-2 text-xs text-gray-500">
-                              ({Math.floor(product.rating * 10)} reviews)
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {product.onSale ? (
-                            <>
-                              <p className="text-sm font-medium text-gray-900 line-through">${product.price.toFixed(2)}</p>
-                              <p className="text-sm font-medium text-red-600">${product.salePrice.toFixed(2)}</p>
-                            </>
-                          ) : (
-                            <p className="text-sm font-medium text-gray-900">${product.price.toFixed(2)}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="mt-4">
-                        <button
-                          className={`w-full flex items-center justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white ${product.stock === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
-                          disabled={product.stock === 0}
-                        >
-                          <FiShoppingCart className="mr-2 h-4 w-4" />
-                          {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                  {currentProducts.map((product) => {
+                    // map local sample shape to ProductCard expected shape
+                    const mapped = {
+                      ...product,
+                      _id: product.id,
+                      photos: product.image ? [product.image] : (product.photos || []),
+                      image: product.image,
+                      salePrice: product.salePrice,
+                    };
+                    return (
+                      <ProductCard key={product.id} product={mapped} />
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-12">
