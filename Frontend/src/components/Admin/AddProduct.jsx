@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { API_BASE_API } from '../../config/api';
+import { getTypesForCategory, addCustomType } from '../../utils/productTypes';
 
 const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,8 @@ const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
   });
   const [colorInput, setColorInput] = useState("");
   const [editing, setEditing] = useState(Boolean(initialData));
+  const [customTypeInput, setCustomTypeInput] = useState('');
+  const [availableTypes, setAvailableTypes] = useState([]);
 
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -95,16 +98,17 @@ const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
     }
 
     // Validate that the product type is valid for the selected category
-    const validProductTypes = {
-      Male: ["T-Shirts", "Shirts", "Jackets", "Jeans", "Shorts", "Sweaters"],
-      Female: ["Dresses", "Tops", "Skirts", "Jeans", "Jackets", "Sweaters"],
-      Kids: ["T-Shirts", "Dresses", "Pants", "Jackets", "Sweaters", "Shorts"]
-    };
-
-    if (!validProductTypes[formData.category].includes(formData.productType)) {
-      setError(`Invalid product type "${formData.productType}" for ${formData.category} category`);
-      setLoading(false);
-      return;
+    // Accept dynamic types (defaults + admin-added types) using the helper.
+    try {
+      const allowed = getTypesForCategory(formData.category || 'Male').map(t => String(t).trim());
+      if (!allowed.includes(String(formData.productType).trim())) {
+        setError(`Invalid product type "${formData.productType}" for ${formData.category} category`);
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      // Fallback: if the helper fails, allow the submission (backend accepts arbitrary productType)
+      console.warn('product type validation helper failed', e);
     }
 
     try {
@@ -121,7 +125,7 @@ const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
       let data;
       if (editing && initialData && initialData._id) {
         // update existing product (use PUT with form data)
-  const res = await fetch(`${API_BASE_API}/products/update/${initialData._id}`, {
+        const res = await fetch(`${API_BASE_API}/products/update/${initialData._id}`, {
           method: 'PUT',
           body: form
         });
@@ -133,7 +137,7 @@ const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
         setSuccess(true);
         if (onUpdate) onUpdate(data.product || data);
       } else {
-  const response = await fetch(`${API_BASE_API}/products/add`, {
+        const response = await fetch(`${API_BASE_API}/products/add`, {
           method: "POST",
           body: form,
         });
@@ -159,7 +163,9 @@ const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
         });
         setColorInput("");
         setPhotos([]);
-        if (onAdd) onAdd(data.product || data);
+        // Notify admin dashboard to refresh data without calling parent's add handler
+        // (Products.handleAddProduct itself also posted to the API which caused a duplicate entry)
+        try { window.dispatchEvent(new Event('adminDataUpdated')); } catch (e) {}
       }
 
       setTimeout(() => {
@@ -193,7 +199,14 @@ const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
       setColorInput("");
       setEditing(true);
     }
+    // update available types whenever category changes or on mount
+    setAvailableTypes(getTypesForCategory(initialData?.category || 'Male'));
   }, [initialData]);
+
+  // update available types when category changes in the form
+  useEffect(() => {
+    setAvailableTypes(getTypesForCategory(formData.category || 'Male'));
+  }, [formData.category]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-emerald-100">
@@ -275,78 +288,40 @@ const AddProduct = ({ onAdd, onUpdate, onClose, initialData = null }) => {
         : 'Select Category First'
       }
     </option>
-    {formData.category === "Male" && (
-      <>
-        <option value="T-Shirts" className="flex items-center">
-          👕 T-Shirts
-        </option>
-        <option value="Shirts">
-          👔 Shirts
-        </option>
-        <option value="Jackets">
-          🧥 Jackets
-        </option>
-        <option value="Jeans">
-          👖 Jeans
-        </option>
-        <option value="Shorts">
-          🩳 Shorts
-        </option>
-        <option value="Sweaters">
-          🧶 Sweaters
-        </option>
-      </>
-    )}
-    {formData.category === "Female" && (
-      <>
-        <option value="Dresses">
-          👗 Dresses
-        </option>
-        <option value="Tops">
-          👚 Tops
-        </option>
-        <option value="Skirts">
-          👘 Skirts
-        </option>
-        <option value="Jeans">
-          👖 Jeans
-        </option>
-        <option value="Jackets">
-          🧥 Jackets
-        </option>
-        <option value="Sweaters">
-          🧶 Sweaters
-        </option>
-      </>
-    )}
-    {formData.category === "Kids" && (
-      <>
-        <option value="T-Shirts">
-          👕 T-Shirts
-        </option>
-        <option value="Dresses">
-          👗 Dresses
-        </option>
-        <option value="Pants">
-          👖 Pants
-        </option>
-        <option value="Jackets">
-          🧥 Jackets
-        </option>
-        <option value="Sweaters">
-          🧶 Sweaters
-        </option>
-        <option value="Shorts">
-          🩳 Shorts
-        </option>
-      </>
-    )}
+    {availableTypes.map((t) => (
+      <option key={t} value={t}>{t}</option>
+    ))}
   </select>
   {formData.category && !formData.productType && (
     <p className="mt-1 text-xs text-blue-600">
       Choose a product type from the {formData.category} collection
     </p>
   )}
+</div>
+
+{/* Inline add custom product type (admin) */}
+<div className="mt-3">
+  <label className="block text-sm font-semibold text-gray-700">Add Custom Product Type (optional)</label>
+  <div className="mt-2 flex gap-2">
+    <input
+      type="text"
+      value={customTypeInput}
+      onChange={(e) => setCustomTypeInput(e.target.value)}
+      placeholder={`e.g. Ethnic Kurta`}
+      className="block w-full border border-gray-300 rounded-lg px-3 py-2"
+    />
+    <button type="button" onClick={() => {
+      const added = addCustomType(formData.category || 'Male', customTypeInput.trim());
+      if (added) {
+        setAvailableTypes(getTypesForCategory(formData.category || 'Male'));
+        setFormData(prev => ({ ...prev, productType: customTypeInput.trim() }));
+        setCustomTypeInput('');
+      } else {
+        // Could show a toast here; keep simple
+        setCustomTypeInput('');
+      }
+    }} className="px-3 py-2 bg-green-600 text-white rounded">Add</button>
+  </div>
 </div>
 
               {/* Category Dropdown */}

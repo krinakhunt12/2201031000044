@@ -11,6 +11,7 @@ import Navbar from '../../components/Users/Navbar';
 import Footer from '../../components/Users/Footer';
 import { searchProducts } from '../../services/searchService';
 import { API_BASE_API } from '../../config/api';
+import { useAuth } from '../../hooks/useAuth';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -27,6 +28,7 @@ const ProductDetail = () => {
   
   const { items: wishlistItems } = useAppSelector(state => state.wishlist);
   const isWishlisted = wishlistItems.some(item => item.id === parseInt(id));
+  const { isAuthenticated, openLoginModal } = useAuth();
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -54,7 +56,7 @@ const ProductDetail = () => {
           }
         }
 
-        // Fallback: try searchService (local constants) then demo fallback
+        // Fallback: try searchService (local constants). If not found, leave product null
         const results = await searchProducts(`id:${id}`, 1);
         if (results.length > 0) {
           const foundProduct = results[0];
@@ -62,32 +64,8 @@ const ProductDetail = () => {
           setSelectedSize(foundProduct.sizes?.[0] || '');
           setSelectedColor(foundProduct.colors?.[0] || '');
         } else {
-          // Demo fallback
-          setProduct({
-            id: id,
-            name: `Product ${id}`,
-            price: 1999,
-            description: 'This is a premium quality product with excellent craftsmanship and modern design. Perfect for everyday wear and special occasions.',
-            image: `https://source.unsplash.com/600x800/?fashion&sig=${id}`,
-            images: [
-              `https://source.unsplash.com/600x800/?fashion&sig=${id}`,
-              `https://source.unsplash.com/600x800/?clothing&sig=${id}`,
-              `https://source.unsplash.com/600x800/?style&sig=${id}`,
-            ],
-            rating: 4.5,
-            reviews: 128,
-            sizes: ['S', 'M', 'L', 'XL'],
-            colors: ['#000000', '#FFFFFF', '#FF6B6B', '#4ECDC4'],
-            category: 'Fashion',
-            brand: 'Stylon',
-            inStock: true,
-            features: [
-              'Premium quality material',
-              'Comfortable fit',
-              'Easy to maintain',
-              'Versatile design'
-            ]
-          });
+          // Product not found on backend or in local search — keep product null so the not-found UI is shown
+          setProduct(null);
         }
       } catch (error) {
         console.error('Error loading product:', error);
@@ -106,7 +84,11 @@ const ProductDetail = () => {
       showSuccess('Please select a size');
       return;
     }
-    
+    if (!isAuthenticated) {
+      showSuccess('Please log in to add items to cart');
+      openLoginModal();
+      return;
+    }
     dispatch(addToCart({
       ...product,
       quantity,

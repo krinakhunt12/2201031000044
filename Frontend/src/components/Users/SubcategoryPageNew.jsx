@@ -8,6 +8,7 @@ import { searchProducts } from "../../services/searchService";
 import { useAppDispatch } from "../../store/hooks";
 import { addToCart } from "../../features/cart/cartSlice";
 import { useToast } from "../../contexts/ToastContext";
+import { useAuth } from '../../hooks/useAuth';
 
 const SubcategoryPageNew = ({
   categoryLabel,
@@ -27,7 +28,8 @@ const SubcategoryPageNew = ({
   });
 
   const dispatch = useAppDispatch();
-  const { showSuccess } = useToast();
+  const { showSuccess, showError } = useToast();
+  const { isAuthenticated, openLoginModal } = useAuth();
 
   const heroUrl = `https://source.unsplash.com/1600x600/?${encodeURIComponent(query)}`;
 
@@ -79,6 +81,11 @@ const SubcategoryPageNew = ({
   const sortedProducts = sortProducts(products);
 
   const handleAddToCart = (product) => {
+    if (!isAuthenticated) {
+      openLoginModal();
+      showError('Please log in to add items to cart');
+      return;
+    }
     dispatch(addToCart({
       ...product,
       quantity: 1,

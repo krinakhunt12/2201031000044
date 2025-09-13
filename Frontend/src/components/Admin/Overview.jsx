@@ -102,39 +102,7 @@ const Overview = ({ orders }) => {
       </div>
 
       {/* Charts Section */}
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div className="bg-white p-7 rounded-2xl border border-gray-100 shadow-lg lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-semibold text-gray-900">Sales Overview</h3>
-              <p className="text-sm text-gray-500">Last 12 months performance</p>
-            </div>
-            <div className="flex space-x-2">
-              <button className="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Week</button>
-              <button className="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Month</button>
-              <button className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors shadow">Year</button>
-            </div>
-          </div>
-          <div className="h-72 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-200">
-            <BarChart2 className="w-12 h-12 text-gray-300" />
-          </div>
-        </div>
 
-  <div className="bg-white p-7 rounded-2xl border border-gray-100 shadow-lg">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-semibold text-gray-900">Revenue Sources</h3>
-              <p className="text-sm text-gray-500">By product categories</p>
-            </div>
-            <button className="text-gray-400 hover:text-gray-600">
-              <MoreVertical className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="h-72 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-200">
-            <PieChart className="w-12 h-12 text-gray-300" />
-          </div>
-        </div>
-      </div>
 
       {/* Recent Orders */}
   <div className="bg-white p-7 rounded-2xl border border-gray-100 shadow-lg">

@@ -14,27 +14,17 @@ const productSchema = new mongoose.Schema({
     },
 
     // Unified product types across all categories
+    // NOTE: previously this field used an enum. To allow admins to create new product types
+    // at runtime, we keep this as a plain string and validate / normalize on the client.
     productType: {
         type: String,
-        enum: [
-            "T-Shirts",
-            "Shirts",
-            "Jackets",
-            "Jeans",
-            "Shorts",
-            "Sweaters",
-            "Dresses",
-            "Tops",
-            "Skirts",
-            "Pants"
-        ],
         required: true
     },
 
     // Allow multiple sizes (array of allowed size strings)
+    // Sizes are free-form strings (e.g., 'M', 'XL', or numeric '24') to support garments like jeans
     size: [{
         type: String,
-        enum: ["XXS", "XS", "S", "M", "L", "XL", "2XL", "3XL"],
     }],
 
     // Allow multiple colors per product

@@ -1,7 +1,7 @@
 const Product = require('../models/Product');
 
 // Define allowed values
-const VALID_SIZES = ["XXS", "XS", "S", "M", "L", "XL", "2XL", "3XL"];
+// Note: VALID_SIZES intentionally removed to allow admin-provided custom sizes (including numeric sizes like '24').
 const VALID_STATUSES = ["Active", "Inactive"];
 
 // -------------------- GET ALL PRODUCTS --------------------
@@ -43,12 +43,7 @@ exports.addProduct = async(req, res) => {
             return res.status(400).json({ success: false, message: "Missing required fields." });
         }
 
-        // Validate sizes
-        for (const s of sizesArray) {
-            if (!VALID_SIZES.includes(s)) {
-                return res.status(400).json({ success: false, message: `Invalid size value: ${s}` });
-            }
-        }
+        // Sizes are free-form now (admins can enter numeric ranges or custom labels)
         if (!VALID_STATUSES.includes(status)) {
             return res.status(400).json({ success: false, message: "Invalid status value." });
         }
@@ -174,11 +169,7 @@ exports.updateProduct = async(req, res) => {
         const updatedData = {...req.body };
         if (updatedData.size) {
             const sizes = Array.isArray(updatedData.size) ? updatedData.size : String(updatedData.size).split(',').map(s => s.trim()).filter(Boolean);
-            for (const s of sizes) {
-                if (!VALID_SIZES.includes(s)) {
-                    return res.status(400).json({ success: false, message: `Invalid size value: ${s}` });
-                }
-            }
+            // Accept any size strings; do not enforce a predefined set here so numeric sizes like '24' are allowed.
             updatedData.size = sizes;
         }
 

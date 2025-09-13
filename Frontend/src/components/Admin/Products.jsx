@@ -397,7 +397,8 @@ const Products = ({
       {/* Add Product Modal */}
       {showAddForm && (
         <AddProduct
-          onAdd={handleAddProduct}
+          /* AddProduct performs the POST itself and dispatches 'adminDataUpdated' on success.
+             Avoid passing onAdd to prevent double POSTs. onUpdate still triggers a refresh via event. */
           onUpdate={() => { try { window.dispatchEvent(new Event('adminDataUpdated')); } catch(e){} }}
           initialData={editProductData}
           onClose={() => { setShowAddForm(false); setEditProductData(null); }}

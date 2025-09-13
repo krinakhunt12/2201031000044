@@ -4,13 +4,12 @@ import {
   Search,
   Filter,
   Eye,
-  Edit,
   CreditCard,
   Shield,
   ChevronDown,
   ChevronUp,
   Package,
-  Trash2,
+  
   MapPin,
   Phone,
   Mail,
@@ -237,10 +236,14 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
                       <div className="text-sm text-gray-900">{order.date || new Date(order.createdAt || '').toLocaleDateString()}</div>
                       <div className="text-xs text-gray-500">{order.time || new Date(order.createdAt || '').toLocaleTimeString()}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
-                      <button className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow" title="View Details" onClick={() => handleViewOrder(id)}><Eye className="w-4 h-4" /></button>
-                      <button className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-100 transition-colors duration-200 shadow" title="Edit Status" onClick={() => setEditingStatus(id)}><Edit className="w-4 h-4" /></button>
-                      <button className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors duration-200 shadow" title="Delete Order" onClick={() => handleDeleteOrder(id)}><Trash2 className="w-4 h-4" /></button>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 shadow"
+                        title="View Details"
+                        onClick={() => handleViewOrder(id)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -304,145 +307,147 @@ const Orders = ({ searchQuery, setSearchQuery, filteredOrders, getStatusColor })
           </div>
         </div>
       )}
-    </div>
-  );
 
-  {showOrderDetails && selectedOrder && (
-      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-2xl bg-white">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-2xl font-bold text-gray-900">Order Details</h3>
-            <button
-              onClick={() => setShowOrderDetails(false)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-          
-          <div className="space-y-6">
-            {/* Order Header */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Order Information</h4>
-                <p className="text-sm text-gray-600">Order ID: #{selectedOrder._id}</p>
-                <p className="text-sm text-gray-600">Date: {new Date(selectedOrder.date || selectedOrder.createdAt).toLocaleDateString()}</p>
-                <p className="text-sm text-gray-600">Status: 
-                  <span className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(selectedOrder.status)}`}>
-                    {selectedOrder.status}
-                  </span>
-                </p>
-                <p className="text-sm text-gray-600">Payment: {selectedOrder.payment}</p>
-                {selectedOrder.paymentIntentId && (
-                  <p className="text-sm text-gray-600">Payment ID: {selectedOrder.paymentIntentId}</p>
-                )}
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Customer Information</h4>
-                <div className="flex items-center mb-1">
-                  <UserIcon className="w-4 h-4 mr-2 text-gray-500" />
-                  <p className="text-sm text-gray-600">{selectedOrder.customer}</p>
-                </div>
-                {selectedOrder.email && (
-                  <div className="flex items-center mb-1">
-                    <Mail className="w-4 h-4 mr-2 text-gray-500" />
-                    <p className="text-sm text-gray-600">{selectedOrder.email}</p>
-                  </div>
-                )}
-                {selectedOrder.phoneNumber && (
-                  <div className="flex items-center mb-1">
-                    <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                    <p className="text-sm text-gray-600">{selectedOrder.phoneNumber}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Shipping Address */}
-            {selectedOrder.shippingAddress && (
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center mb-2">
-                  <MapPin className="w-5 h-5 mr-2 text-blue-600" />
-                  <h4 className="font-semibold text-gray-900">Shipping Address</h4>
-                </div>
-                <div className="text-sm text-gray-600">
-                  <p>{selectedOrder.shippingAddress.street}</p>
-                  <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.postalCode}</p>
-                  <p>{selectedOrder.shippingAddress.country}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Order Items */}
-            <div className="p-4 bg-green-50 rounded-lg">
-              <div className="flex items-center mb-3">
-                <Package className="w-5 h-5 mr-2 text-green-600" />
-                <h4 className="font-semibold text-gray-900">Order Items</h4>
-              </div>
-              {selectedOrder.products && selectedOrder.products.length > 0 ? (
-                <div className="space-y-2">
-                  {selectedOrder.products.map((product, index) => (
-                    <div key={index} className="flex justify-between items-center py-2 border-b border-green-200 last:border-b-0">
-                      <div>
-                        <p className="font-medium text-gray-900">{product.name}</p>
-                        <p className="text-sm text-gray-600">
-                          Size: {product.size || 'N/A'} | Color: {product.color || 'N/A'}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-gray-900">₹{product.price}</p>
-                        <p className="text-sm text-gray-600">Qty: {product.quantity}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-600">No product details available</p>
-              )}
-            </div>
-
-            {/* Order Total */}
-            <div className="p-4 bg-yellow-50 rounded-lg">
-              <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-gray-900">Total Amount</h4>
-                <p className="text-2xl font-bold text-gray-900">₹{selectedOrder.amount.toLocaleString()}</p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-3 pt-4">
-              <button
-                onClick={() => setEditingStatus(selectedOrder._id)}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Update Status
-              </button>
+      {/* Order Details Modal */}
+      {showOrderDetails && selectedOrder && (
+        <div className="fixed inset-0 bg-gray-900/70 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-2xl bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold text-gray-900">Order Details</h3>
               <button
                 onClick={() => setShowOrderDetails(false)}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                Close
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
               </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Order Header */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Order Information</h4>
+                  <p className="text-sm text-gray-600">Order ID: #{selectedOrder._id}</p>
+                  <p className="text-sm text-gray-600">Date: {new Date(selectedOrder.date || selectedOrder.createdAt).toLocaleDateString()}</p>
+                  <p className="text-sm text-gray-600">Status: 
+                    <span className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(selectedOrder.status)}`}>
+                      {selectedOrder.status}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-600">Payment: {selectedOrder.payment}</p>
+                  {selectedOrder.paymentIntentId && (
+                    <p className="text-sm text-gray-600">Payment ID: {selectedOrder.paymentIntentId}</p>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Customer Information</h4>
+                  <div className="flex items-center mb-1">
+                    <UserIcon className="w-4 h-4 mr-2 text-gray-500" />
+                    <p className="text-sm text-gray-600">{selectedOrder.customer}</p>
+                  </div>
+                  {selectedOrder.email && (
+                    <div className="flex items-center mb-1">
+                      <Mail className="w-4 h-4 mr-2 text-gray-500" />
+                      <p className="text-sm text-gray-600">{selectedOrder.email}</p>
+                    </div>
+                  )}
+                  {selectedOrder.phoneNumber && (
+                    <div className="flex items-center mb-1">
+                      <Phone className="w-4 h-4 mr-2 text-gray-500" />
+                      <p className="text-sm text-gray-600">{selectedOrder.phoneNumber}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              {selectedOrder.shippingAddress && (
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+                    <h4 className="font-semibold text-gray-900">Shipping Address</h4>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p>{selectedOrder.shippingAddress.street}</p>
+                    <p>{selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.postalCode}</p>
+                    <p>{selectedOrder.shippingAddress.country}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Order Items */}
+              <div className="p-4 bg-green-50 rounded-lg">
+                <div className="flex items-center mb-3">
+                  <Package className="w-5 h-5 mr-2 text-green-600" />
+                  <h4 className="font-semibold text-gray-900">Order Items</h4>
+                </div>
+                {selectedOrder.products && selectedOrder.products.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedOrder.products.map((product, index) => (
+                      <div key={index} className="flex justify-between items-center py-2 border-b border-green-200 last:border-b-0">
+                        <div>
+                          <p className="font-medium text-gray-900">{product.name}</p>
+                          <p className="text-sm text-gray-600">
+                            Size: {product.size || 'N/A'} | Color: {product.color || 'N/A'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900">₹{product.price}</p>
+                          <p className="text-sm text-gray-600">Qty: {product.quantity}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-600">No product details available</p>
+                )}
+              </div>
+
+              {/* Order Total */}
+              <div className="p-4 bg-yellow-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-semibold text-gray-900">Total Amount</h4>
+                  <p className="text-2xl font-bold text-gray-900">₹{selectedOrder.amount.toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setEditingStatus(selectedOrder._id)}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Update Status
+                </button>
+                <button
+                  onClick={() => setShowOrderDetails(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
-    {/* Confirmation dialog for delete actions */}
-    <ConfirmDialog
-      open={confirmOpen}
-      title="Delete Order"
-      message="Are you sure you want to permanently delete this order? This action cannot be undone."
-      confirmLabel="Delete"
-      cancelLabel="Cancel"
-      loading={confirmLoading}
-      onConfirm={handleConfirmDelete}
-      onCancel={() => { setConfirmOpen(false); setConfirmTargetId(null); }}
-    />
-  
+      )}
+
+      {/* Confirmation dialog for delete actions */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete Order"
+        message="Are you sure you want to permanently delete this order? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        loading={confirmLoading}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => { setConfirmOpen(false); setConfirmTargetId(null); }}
+      />
+
+    </div>
+  );
 };
 
 export default Orders;

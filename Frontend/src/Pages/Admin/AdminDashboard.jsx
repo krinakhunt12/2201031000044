@@ -106,10 +106,19 @@ const AdminDashboard = () => {
           amount: order.amount || 0
         }));
 
+        // Deduplicate products by _id (safety-net in case duplicates exist)
+        const uniqueProductsMap = new Map();
+        (productsRes.products || []).forEach(p => {
+          if (p && (p._id || p.id)) {
+            uniqueProductsMap.set(p._id || p.id, p);
+          }
+        });
+        const uniqueProducts = Array.from(uniqueProductsMap.values());
+
         // Calculate stats from real data
         const stats = {
           totalUsers: 150, // Keep mock for now
-          totalProducts: productsRes.products?.length || 0,
+          totalProducts: uniqueProducts.length || 0,
           totalOrders: transformedOrders.length,
           revenue: transformedOrders.reduce((sum, order) => sum + (order.amount || 0), 0),
           newUsers: 12, // Keep mock for now
@@ -125,8 +134,8 @@ const AdminDashboard = () => {
           { _id: '3', name: 'Admin User', email: 'admin@example.com', role: 'admin' },
         ];
 
-        setStats(stats);
-        setProducts(productsRes.products || []);
+  setStats(stats);
+  setProducts(uniqueProducts);
         setOrders(transformedOrders);
         setUsers(mockUsers);
       } catch (err) {

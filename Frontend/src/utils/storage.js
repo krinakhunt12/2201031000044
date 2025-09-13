@@ -4,10 +4,12 @@ export function getStorageKey(base) {
         const raw = localStorage.getItem('user');
         if (!raw) return base;
         const user = JSON.parse(raw);
-        // prefer emailOrPhone if present, otherwise fallback to id
+        // prefer emailOrPhone, then email, otherwise fallback to id
         let identifier = null;
         if (user && user.emailOrPhone) {
             identifier = user.emailOrPhone;
+        } else if (user && user.email) {
+            identifier = user.email;
         } else if (user && user.id) {
             identifier = user.id;
         }

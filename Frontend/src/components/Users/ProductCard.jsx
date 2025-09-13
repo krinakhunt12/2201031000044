@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { addToCart } from '../../features/cart/cartSlice';
 import { addToWishlist, removeFromWishlist } from '../../features/wishlist/wishlistSlice';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const ProductCard = ({ product, showColors = true, showRating = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -18,6 +19,7 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
   const dispatch = useAppDispatch();
   const { items: wishlistItems } = useAppSelector(state => state.wishlist);
   const { showSuccess, showError } = useToast();
+  const { isAuthenticated, openLoginModal } = useAuth();
   
   // Check if product is in wishlist
   useEffect(() => {
@@ -56,6 +58,11 @@ const ProductCard = ({ product, showColors = true, showRating = true }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isAuthenticated) {
+      showError('Please log in to add items to cart');
+      openLoginModal();
+      return;
+    }
     // If product has a single size value, add directly to cart; otherwise open quick view
     const sizeValue = product.size || (product.sizes && product.sizes.length === 1 && product.sizes[0]);
     const itemId = product._id || product.id || Math.random().toString(36).slice(2,9);

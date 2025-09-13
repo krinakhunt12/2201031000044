@@ -23,33 +23,14 @@ import SearchSuggestions from './search/SearchSuggestions';
 import SignUp from "../../Pages/Users/SignUp";
 import Login from "../../Pages/Users/Login";
 import DynamicNavigation from './DynamicNavigation';
+import { getTypesForCategory } from '../../utils/productTypes';
 
 // Define category-specific product types to eliminate duplicates
+// Build navigation dynamically from default + custom types (keeps icons simple)
 const categoryProductTypes = {
-  Men: [
-    { name: "T-Shirts", path: "tshirts", icon: "👕" },
-    { name: "Shirts", path: "shirts", icon: "👔" },
-    { name: "Jackets", path: "jackets", icon: "🧥" },
-    { name: "Jeans", path: "jeans", icon: "👖" },
-    { name: "Shorts", path: "shorts", icon: "🩳" },
-    { name: "Sweaters", path: "sweaters", icon: "🧶" }
-  ],
-  Women: [
-    { name: "Dresses", path: "dresses", icon: "👗" },
-    { name: "Tops", path: "tops", icon: "👚" },
-    { name: "Skirts", path: "skirts", icon: "👘" },
-    { name: "Jeans", path: "jeans", icon: "👖" },
-    { name: "Jackets", path: "jackets", icon: "🧥" },
-    { name: "Sweaters", path: "sweaters", icon: "🧶" }
-  ],
-  Kids: [
-    { name: "T-Shirts", path: "tshirts", icon: "👕" },
-    { name: "Dresses", path: "dresses", icon: "👗" },
-    { name: "Pants", path: "pants", icon: "👖" },
-    { name: "Jackets", path: "jackets", icon: "🧥" },
-    { name: "Sweaters", path: "sweaters", icon: "🧶" },
-    { name: "Shorts", path: "shorts", icon: "🩳" }
-  ]
+  Men: getTypesForCategory('Male').map(name => ({ name, path: String(name).toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/gi,''), icon: '�' })),
+  Women: getTypesForCategory('Female').map(name => ({ name, path: String(name).toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/gi,''), icon: '👗' })),
+  Kids: getTypesForCategory('Kids').map(name => ({ name, path: String(name).toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/gi,''), icon: '�' })),
 };
 
 const categoryData = [

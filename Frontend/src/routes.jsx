@@ -19,6 +19,7 @@ import Search from "./components/Users/Search";
 import Profile from "./Pages/Users/Profile";
 import CheckoutPage from "./Pages/Users/CheckoutPage";
 import ProductDetail from "./Pages/Users/ProductDetail";
+import NotFound from "./Pages/NotFound";
 
 // Main category pages
 import MenCategory from "./Pages/Users/MenCategory";
@@ -109,7 +110,7 @@ const AppRoutes = () => {
           <Route path="/product/:id" element={<ProductDetail />} />
            <Route path="/profile" element={<Profile />} />
           {/* Catch-all route for 404 */}
-          {/* <Route path="*" element={<NotFound />} /> */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
   );
 };

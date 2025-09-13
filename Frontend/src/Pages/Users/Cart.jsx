@@ -12,22 +12,33 @@ const Cart = () => {
   const dispatch = useAppDispatch();
   const { items: cartItems, totalAmount, totalQuantity } = useAppSelector(state => state.cart);
   const { showSuccess, showError } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, openLoginModal } = useAuth();
+
+  // Debug: Log cart items whenever component renders
+  console.log('🛒 Cart component rendered with items:', cartItems.map(item => ({
+    id: item.id,
+    name: item.name,
+    selectedSize: item.selectedSize,
+    quantity: item.quantity
+  })));
+  console.log('📊 Cart totals - quantity:', totalQuantity, 'amount:', totalAmount);
 
   const handleRemoveItem = (item) => {
-    if (!isAuthenticated) {
-      showError('Please log in to your account.');
-      return;
-    }
+    console.log('🔥 handleRemoveItem called with item:', { id: item.id, selectedSize: item.selectedSize, name: item.name });
+    // Allow both guests and authenticated users to remove items from the local cart.
     dispatch(removeFromCart({ id: item.id, selectedSize: item.selectedSize }));
     showSuccess('Item removed from cart');
   };
 
   const handleUpdateQuantity = (item, newQuantity) => {
-    if (!isAuthenticated) {
-      showError('Please log in to your account.');
-      return;
-    }
+    console.log('🔢 handleUpdateQuantity called with:', { 
+      id: item.id, 
+      selectedSize: item.selectedSize, 
+      currentQuantity: item.quantity, 
+      newQuantity,
+      name: item.name 
+    });
+    // Allow guests to update quantities locally; if quantity goes to zero, remove the item.
     if (newQuantity <= 0) {
       handleRemoveItem(item);
     } else {
@@ -197,12 +208,20 @@ const Cart = () => {
                 >
                   Continue Shopping
                 </Link>
-                <Link
-                  to="/checkout"
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      showError('Please log in to proceed to checkout');
+                      openLoginModal();
+                      return;
+                    }
+                    // navigate to checkout
+                    window.location.href = '/checkout';
+                  }}
                   className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-all shadow-md hover:shadow-lg font-medium text-center"
                 >
                   Proceed to Checkout
-                </Link>
+                </button>
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import Modal from '../Users/ui/Modal';
 import { useAppDispatch } from '../../store/hooks';
 import { addToCart } from '../../features/cart/cartSlice';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
 
 const QuickViewModal = ({ product, isOpen, onClose }) => {
   const dispatch = useAppDispatch();
@@ -18,7 +19,16 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
 
   if (!product) return null;
 
-  const handleAddToCart = () => {
+    const { isAuthenticated, openLoginModal } = useAuth();
+    const { showError } = useToast();
+
+    const handleAddToCart = () => {
+      if (!isAuthenticated) {
+        // Prompt login if not authenticated
+        showError('Please log in to add items to cart');
+        openLoginModal();
+        return;
+      }
     // Allow adding when there are no size requirements
     if (availableSizes.length > 0 && !selectedSize) return;
     setIsLoading(true);

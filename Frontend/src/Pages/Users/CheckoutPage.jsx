@@ -17,6 +17,7 @@ const CheckoutPage = () => {
   const { items: cartItems } = useAppSelector(state => state.cart);
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
   
   // Shipping information
   const { user } = useAuth();
@@ -120,7 +121,7 @@ const CheckoutPage = () => {
     }
   };
 
-  const createOrder = async () => {
+  const createOrder = async (paymentMethodOverride = 'Razorpay') => {
     try {
       // Save address before creating order
       saveAddress();
@@ -140,7 +141,7 @@ const CheckoutPage = () => {
         phoneNumber: (authUser && authUser.phone) || shippingInfo.phone,
         amount: total,
         items: cartItems.length,
-        payment: 'Razorpay', // Updated to show Razorpay instead of Stripe
+        payment: paymentMethodOverride || 'Razorpay',
         shippingAddress: {
           street: shippingInfo.address,
           city: shippingInfo.city,
@@ -171,6 +172,32 @@ const CheckoutPage = () => {
       console.error('Order creation failed:', error);
       showError('Failed to create order. Please try again.');
       return null;
+    }
+  };
+
+  // Handler for Cash on Delivery orders
+  const placeCodOrder = async () => {
+    if (!isFormValid()) {
+      showError('Please complete shipping information before placing order.');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const createdId = await createOrder('Cash on Delivery');
+      if (!createdId) throw new Error('Order creation failed');
+
+      // Persist and notify exactly like a successful payment flow
+      try { localStorage.setItem('lastOrderPlaced', createdId); } catch (e) {}
+
+      showSuccess('Order placed. Please pay the delivery person on arrival.');
+      dispatch(clearCart());
+      navigate(`/order-confirmation/${createdId}`);
+    } catch (err) {
+      console.error('COD order failed:', err);
+      showError('Failed to place Cash on Delivery order. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -426,23 +453,45 @@ const CheckoutPage = () => {
                   className="bg-white p-6 rounded-lg shadow-lg border border-gray-100"
                 >
                   <h3 className="text-lg font-semibold mb-4 text-gray-900">Payment</h3>
-                  {(() => {
-                    const prefill = {
-                      name: shippingInfo.name || (user && user.name) || '',
-                      email: (user && (user.email || user.emailOrPhone)) || shippingInfo.email || '',
-                      contact: shippingInfo.phone || (user && user.phone) || ''
-                    };
-                    return (
-                      <StripeCheckout
-                        amount={total}
-                        orderId={orderId}
-                        createOrder={createOrder}
-                        onSuccess={handlePaymentSuccess}
-                        onError={handlePaymentError}
-                        prefill={prefill}
-                      />
-                    );
-                  })()}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <label className={`inline-flex items-center space-x-2 ${paymentMethod === 'Razorpay' ? 'font-medium' : ''}`}>
+                        <input type="radio" name="paymentMethod" value="Razorpay" checked={paymentMethod === 'Razorpay'} onChange={() => setPaymentMethod('Razorpay')} className="h-4 w-4" />
+                        <span>Razorpay (Online)</span>
+                      </label>
+                      <label className={`inline-flex items-center space-x-2 ${paymentMethod === 'Cash on Delivery' ? 'font-medium' : ''}`}>
+                        <input type="radio" name="paymentMethod" value="Cash on Delivery" checked={paymentMethod === 'Cash on Delivery'} onChange={() => setPaymentMethod('Cash on Delivery')} className="h-4 w-4" />
+                        <span>Cash on Delivery</span>
+                      </label>
+                    </div>
+
+                    {paymentMethod === 'Razorpay' ? (
+                      (() => {
+                        const prefill = {
+                          name: shippingInfo.name || (user && user.name) || '',
+                          email: (user && (user.email || user.emailOrPhone)) || shippingInfo.email || '',
+                          contact: shippingInfo.phone || (user && user.phone) || ''
+                        };
+                        return (
+                          <StripeCheckout
+                            amount={total}
+                            orderId={orderId}
+                            createOrder={createOrder}
+                            onSuccess={handlePaymentSuccess}
+                            onError={handlePaymentError}
+                            prefill={prefill}
+                          />
+                        );
+                      })()
+                    ) : (
+                      <div className="pt-4">
+                        <p className="text-sm text-gray-600 mb-3">You chose Cash on Delivery. Please keep the exact amount ready at delivery.</p>
+                        <button onClick={placeCodOrder} disabled={isProcessing} className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                          {isProcessing ? 'Placing order...' : 'Place COD Order'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </div>

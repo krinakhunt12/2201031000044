@@ -9,7 +9,7 @@ const SignUp = ({ handleSwitchMode }) => {
   const { signup } = useAuth(); // Get signup from context
   const [signupFormData, setSignupFormData] = useState({
     name: '',
-    emailOrPhone: '',
+    email: '',
     password: '',
     confirmPassword: '',
   });
@@ -94,14 +94,14 @@ const SignUp = ({ handleSwitchMode }) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email address or Mobile number</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email address</label>
             <input
-              name="emailOrPhone"
-              type="text"
+              name="email"
+              type="email"
               required
-              value={signupFormData.emailOrPhone}
+              value={signupFormData.email}
               onChange={handleSignupInputChange}
-              placeholder="Enter your email or mobile number"
+              placeholder="Enter your email address"
               className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
